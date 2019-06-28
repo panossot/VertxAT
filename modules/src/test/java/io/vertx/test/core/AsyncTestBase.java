@@ -12,12 +12,10 @@
 package io.vertx.test.core;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Assert;
@@ -28,11 +26,13 @@ import org.junit.rules.TestName;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.function.Supplier;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
@@ -52,7 +52,6 @@ public class AsyncTestBase {
   private boolean threadChecksEnabled = true;
   private volatile boolean tearingDown;
   private volatile String mainThreadName;
-  private volatile boolean lateFailure;
   private Map<String, Exception> threadNames = new ConcurrentHashMap<>();
   @Rule
   public TestName name = new TestName();
@@ -67,7 +66,6 @@ public class AsyncTestBase {
     testCompleteCalled = false;
     awaitCalled = false;
     threadNames.clear();
-    lateFailure = false;
   }
 
   protected void tearDown() throws Exception {
@@ -164,9 +162,6 @@ public class AsyncTestBase {
       // Throwable caught from non main thread
       throw new IllegalStateException("Assert or failure from non main thread but no await() on main thread", throwable);
     }
-    if (lateFailure) {
-      throw new IllegalStateException("Test reported a failure after completion");
-    }
     for (Map.Entry<String, Exception> entry: threadNames.entrySet()) {
       if (!entry.getKey().equals(mainThreadName)) {
         if (threadChecksEnabled && !entry.getKey().startsWith("vert.x-")) {
@@ -180,8 +175,7 @@ public class AsyncTestBase {
   }
 
   private void handleThrowable(Throwable t) {
-    if (testCompleteCalled) {
-      lateFailure = true;
+    if (tearingDown) {
       throw new IllegalStateException("assert or failure occurred after test has completed");
     }
     throwable = t;
@@ -597,11 +591,7 @@ public class AsyncTestBase {
   }
 
   protected void awaitLatch(CountDownLatch latch) throws InterruptedException {
-    awaitLatch(latch, 10, TimeUnit.SECONDS);
-  }
-
-  protected void awaitLatch(CountDownLatch latch, long timeout, TimeUnit unit) throws InterruptedException {
-    assertTrue(latch.await(timeout, unit));
+    assertTrue(latch.await(10, TimeUnit.SECONDS));
   }
 
   public static void assertWaitUntil(BooleanSupplier supplier) {
@@ -662,9 +652,5 @@ public class AsyncTestBase {
       latch.countDown();
     });
     awaitLatch(latch);
-  }
-
-  protected void assertSameEventLoop(Context expected, Context actual) {
-    assertSame(((ContextInternal)expected).nettyEventLoop(), ((ContextInternal)actual).nettyEventLoop());
   }
 }

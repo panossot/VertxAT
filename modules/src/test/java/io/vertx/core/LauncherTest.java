@@ -537,7 +537,7 @@ public class LauncherTest extends VertxTestBase {
     if (opts.getMetricsOptions().isEnabled()) {
       def.getMetricsOptions().setEnabled(true);
     }
-    assertEquals(def.toJson(), opts.toJson());
+    assertEquals(def, opts);
 
   }
 
@@ -557,7 +557,7 @@ public class LauncherTest extends VertxTestBase {
     if (opts.getMetricsOptions().isEnabled()) {
       def.getMetricsOptions().setEnabled(true);
     }
-    assertEquals(def.toJson(), opts.toJson());
+    assertEquals(def, opts);
   }
 
   @Test

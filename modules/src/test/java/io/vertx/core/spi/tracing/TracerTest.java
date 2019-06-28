@@ -17,7 +17,6 @@ import org.junit.Test;
 import java.util.concurrent.CountDownLatch;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class TracerTest extends VertxTestBase {
 
   private FakeTracer tracer = new FakeTracer();

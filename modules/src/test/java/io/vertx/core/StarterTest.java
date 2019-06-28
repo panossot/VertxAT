@@ -34,7 +34,6 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 @SuppressWarnings("deprecation")
 public class StarterTest extends VertxTestBase {
 

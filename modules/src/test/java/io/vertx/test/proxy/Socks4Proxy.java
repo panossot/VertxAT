@@ -13,8 +13,8 @@ package io.vertx.test.proxy;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -24,7 +24,6 @@ import io.vertx.core.streams.Pump;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
 /**
  * SOCKS4 Proxy
@@ -38,6 +37,8 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
  *
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
+import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
+
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class Socks4Proxy extends TestProxyBase {
 

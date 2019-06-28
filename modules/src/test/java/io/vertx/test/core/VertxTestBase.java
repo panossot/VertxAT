@@ -16,8 +16,6 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.tracing.VertxTracer;
-import io.vertx.core.tracing.TracingOptions;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Rule;
 
@@ -34,7 +32,7 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1"})
 public class VertxTestBase extends AsyncTestBase {
 
   public static final boolean USE_NATIVE_TRANSPORT = Boolean.getBoolean("vertx.useNativeTransport");
@@ -67,17 +65,9 @@ public class VertxTestBase extends AsyncTestBase {
     }
   }
 
-  protected VertxTracer getTracer() {
-    return null;
-  }
-
   protected VertxOptions getOptions() {
     VertxOptions options = new VertxOptions();
     options.setPreferNativeTransport(USE_NATIVE_TRANSPORT);
-    VertxTracer tracer = getTracer();
-    if (tracer != null) {
-      options.setTracingOptions(new TracingOptions().setEnabled(true).setFactory(opts -> tracer));
-    }
     return options;
   }
 
@@ -245,19 +235,5 @@ public class VertxTestBase extends AsyncTestBase {
       contexts.add(createWorker());
     }
     return contexts;
-  }
-
-  protected void assertOnIOContext(Context context) {
-    Context current = Vertx.currentContext();
-    assertNotNull(current);
-    assertSameEventLoop(context, current);
-    for (StackTraceElement elt : Thread.currentThread().getStackTrace()) {
-      String className = elt.getClassName();
-      String methodName = elt.getMethodName();
-      if (className.equals("io.vertx.core.impl.AbstractContext") && methodName.equals("dispatch")) {
-        return;
-      }
-    }
-    fail("Not dispatching");
   }
 }

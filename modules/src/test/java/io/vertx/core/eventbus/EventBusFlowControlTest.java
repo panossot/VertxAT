@@ -176,7 +176,7 @@ public class EventBusFlowControlTest extends VertxTestBase {
       if (sequence.isEmpty()) {
         handlerContext.set(Vertx.currentContext());
       } else {
-        assertOnIOContext(handlerContext.get());
+        assertEquals(Vertx.currentContext(), handlerContext.get());
       }
       sequence.add(msg.body());
     });

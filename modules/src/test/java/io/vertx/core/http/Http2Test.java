@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1"})
 public class Http2Test extends HttpTest {
 
   @Override
@@ -64,31 +64,29 @@ public class Http2Test extends HttpTest {
         req.response().write("hello ").end("world");
       });
     }).listen(testAddress, onSuccess(v -> {
-      client.request(HttpMethod.GET, testAddress, 8080, "localhost", "/somepath", onSuccess(resp -> {
+      client.request(HttpMethod.GET, testAddress, 8080, "localhost", "/somepath", resp -> {
         assertEquals(200, resp.statusCode());
         resp.bodyHandler(buff -> {
           assertEquals(Buffer.buffer("hello world"), buff);
           testComplete();
         });
-      })).exceptionHandler(this::fail).end();
+      }).exceptionHandler(this::fail).end();
     }));
     await();
   }
 
   @Test
   public void testServerResponseResetFromOtherThread() throws Exception {
-    waitFor(2);
     server.requestHandler(req -> {
       runAsync(() -> {
         req.response().reset(0);
       });
     }).listen(testAddress, onSuccess(v -> {
-      client.request(HttpMethod.GET, testAddress, 8080, "localhost", "/somepath", onFailure(err -> {
+      client.request(HttpMethod.GET, testAddress, 8080, "localhost", "/somepath", resp -> {
+        fail();
+      }).exceptionHandler(err -> {
         assertTrue(err instanceof StreamResetException);
-        complete();
-      })).exceptionHandler(err -> {
-        assertTrue(err instanceof StreamResetException);
-        complete();
+        testComplete();
       }).sendHead();
     }));
     await();
@@ -117,10 +115,10 @@ public class Http2Test extends HttpTest {
       latch1.countDown();
     }));
     awaitLatch(latch1);
-    HttpClientRequest req = client.request(HttpMethod.GET, testAddress, 8080, "localhost", "/somepath", onSuccess(resp -> {
+    HttpClientRequest req = client.request(HttpMethod.GET, testAddress, 8080, "localhost", "/somepath", resp -> {
       assertEquals(200, resp.statusCode());
       testComplete();
-    })).setChunked(true).sendHead();
+    }).setChunked(true).sendHead();
     awaitLatch(latch2); // The next write won't be buffered
     req.write("hello ").end("world");
     await();
@@ -143,10 +141,10 @@ public class Http2Test extends HttpTest {
       req.response().end();
     });
     startServer(testAddress);
-    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", onSuccess(resp -> {
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
       assertEquals(200, resp.statusCode());
       testComplete();
-    })).exceptionHandler(this::fail).end();
+    }).exceptionHandler(this::fail).end();
     await();
   }
 
@@ -179,7 +177,7 @@ public class Http2Test extends HttpTest {
       }
     });
     startServer(testAddress);
-    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/0", onSuccess(resp -> {
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/0", resp -> {
       resp.pause();
       Context ctx = vertx.getOrCreateContext();
       resumeLatch.thenAccept(v1 -> {
@@ -190,13 +188,13 @@ public class Http2Test extends HttpTest {
           resp.resume();
         });
       });
-    })).end();
+    }).end();
     awaitLatch(fullLatch);
-    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1", onSuccess(resp -> {
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1", resp -> {
       resp.endHandler(v -> {
         complete();
       });
-    })).end();
+    }).end();
     resumeLatch.get(20, TimeUnit.SECONDS); // Make sure it completes
     await();
   }
@@ -292,9 +290,9 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     AtomicBoolean closed = new AtomicBoolean();
-    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {}))
-      .connectionHandler(conn -> conn.closeHandler(v -> closed.set(true)))
-      .end();
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      fail();
+    }).connectionHandler(conn -> conn.closeHandler(v -> closed.set(true))).end();
     AsyncTestBase.assertWaitUntil(closed::get);
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       testComplete();
@@ -315,10 +313,10 @@ public class Http2Test extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false));
-    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertEquals(HttpVersion.HTTP_1_1, resp.version());
       complete();
-    })).exceptionHandler(this::fail).end();
+    }).exceptionHandler(this::fail).end();
     await();
   }
 
@@ -333,10 +331,10 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertEquals(HttpVersion.HTTP_1_1, resp.version());
       complete();
-    })).exceptionHandler(this::fail).end();
+    }).exceptionHandler(this::fail).end();
     await();
   }
 
@@ -407,13 +405,13 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertNull(resp.getHeader("content-length"));
       resp.bodyHandler(body -> {
         assertEquals("HelloWorld", body.toString());
         complete();
       });
-    })).end();
+    }).end();
     await();
   }
 
@@ -425,7 +423,7 @@ public class Http2Test extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
-    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       long now = System.currentTimeMillis();
       resp.request().connection().closeHandler(v -> {
         long timeout = System.currentTimeMillis() - now;
@@ -436,7 +434,7 @@ public class Http2Test extends HttpTest {
         assertTrue("Expected actual close timeout " + timeout + " to be < " + high, timeout < high);
         testComplete();
       });
-    })).end();
+    }).end();
     await();
   }
   
@@ -459,11 +457,11 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
-    HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+    HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
       assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
       complete();
-    }));
+    });
     request.setStreamPriority(new StreamPriority()
       .setDependency(requestStreamDependency)
       .setWeight(requestStreamWeight)
@@ -508,7 +506,7 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
-    HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+    HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
       assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
       resp.streamPriorityHandler( sp -> {
@@ -519,7 +517,7 @@ public class Http2Test extends HttpTest {
           complete();
         });
       complete();
-    }));
+    });
     request.setStreamPriority(new StreamPriority()
       .setDependency(requestStreamDependency)
       .setWeight(requestStreamWeight)
@@ -562,7 +560,7 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
-    HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+    HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
       assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
       resp.streamPriorityHandler( sp -> {
@@ -570,7 +568,7 @@ public class Http2Test extends HttpTest {
           complete();
         });
       complete();
-    }));
+    });
     request.setStreamPriority(new StreamPriority()
       .setDependency(requestStreamDependency)
       .setWeight(requestStreamWeight)
@@ -599,11 +597,11 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
-    HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+    HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertEquals(requestStreamWeight, resp.request().getStreamPriority().getWeight());
       assertEquals(requestStreamDependency, resp.request().getStreamPriority().getDependency());
       complete();
-    }));
+    });
     request.setStreamPriority(new StreamPriority()
       .setDependency(requestStreamDependency)
       .setWeight(requestStreamWeight)
@@ -625,11 +623,11 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
-    HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+    HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertEquals(defaultStreamWeight, resp.request().getStreamPriority().getWeight());
       assertEquals(defaultStreamDependency, resp.request().getStreamPriority().getDependency());
       complete();
-    }));
+    });
     request.end();
     await();
   }
@@ -659,11 +657,11 @@ public class Http2Test extends HttpTest {
     });
     request.pushHandler(pushReq -> {
       complete();
-      pushReq.handler(onSuccess(pushResp -> {
+      pushReq.handler(pushResp -> {
         assertEquals(pushStreamDependency, pushResp.request().getStreamPriority().getDependency());
         assertEquals(pushStreamWeight, pushResp.request().getStreamPriority().getWeight());
         complete();
-      }));
+      });
     });
     request.end();
     await();
@@ -685,16 +683,16 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
-    HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+    HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       complete();
-    }));
+    });
     request.pushHandler(pushReq -> {
       complete();
-      pushReq.handler(onSuccess(pushResp -> {
+      pushReq.handler(pushResp -> {
         assertEquals(reqStreamDependency, pushResp.request().getStreamPriority().getDependency());
         assertEquals(reqStreamWeight, pushResp.request().getStreamPriority().getWeight());
         complete();
-      }));
+      });
     });
     request.setStreamPriority(new StreamPriority()
       .setDependency(reqStreamDependency)

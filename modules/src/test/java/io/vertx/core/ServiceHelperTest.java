@@ -38,7 +38,6 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class ServiceHelperTest {
 
   @Before

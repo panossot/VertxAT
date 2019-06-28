@@ -21,7 +21,7 @@ import java.net.URLClassLoader;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+
 public class NestedRootJarResolverTest extends FileResolverTestBase {
 
   private ClassLoader prevCL;

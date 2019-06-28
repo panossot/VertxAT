@@ -29,7 +29,6 @@ import java.util.Collections;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class ClasspathHandlerTest extends CommandTestBase {
 
   public static final String VERTICLE = "io.vertx.core.externals.MyVerticle";

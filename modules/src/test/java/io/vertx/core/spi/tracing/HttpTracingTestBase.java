@@ -23,7 +23,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public abstract class HttpTracingTestBase extends HttpTestBase {
 
   private FakeTracer tracer;

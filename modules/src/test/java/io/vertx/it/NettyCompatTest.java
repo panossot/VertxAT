@@ -20,11 +20,12 @@ import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
-import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
+
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class NettyCompatTest extends VertxTestBase {
 
@@ -49,12 +50,12 @@ public class NettyCompatTest extends VertxTestBase {
               .setSsl(true)
               .setSslEngineOptions(new OpenSSLEngineOptions())
               .setTrustStoreOptions(Trust.SERVER_JKS.get()));
-          client.getNow(8443, "localhost", "/somepath", onSuccess(resp -> {
+          client.getNow(8443, "localhost", "/somepath", resp -> {
             resp.bodyHandler(buff -> {
               assertEquals("OK", buff.toString());
               testComplete();
             });
-          }));
+          });
         }));
     await();
   }

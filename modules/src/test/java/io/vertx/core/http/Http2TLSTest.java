@@ -19,7 +19,6 @@ import io.vertx.test.tls.Trust;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class Http2TLSTest extends HttpTLSTest {
 
   @Override

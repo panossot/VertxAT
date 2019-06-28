@@ -33,7 +33,6 @@ import static org.junit.Assert.assertEquals;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class LoggingBackendSelectionTest {
 
   private ClassLoader originalTccl;

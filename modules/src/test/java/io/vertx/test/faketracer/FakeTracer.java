@@ -27,7 +27,6 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 /**
  * @author Pavol Loffay
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class FakeTracer implements VertxTracer<Span, Span> {
 
   private static final String ACTIVE_SCOPE_KEY = "active.scope";

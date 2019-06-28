@@ -27,11 +27,12 @@ import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.http.HttpTestBase;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
-import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
+
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class SSLEngineTest extends HttpTestBase {
 
@@ -128,10 +129,10 @@ public class SSLEngineTest extends HttpTestBase {
           .setUseAlpn(useAlpn)
           .setTrustAll(true)
           .setProtocolVersion(version));
-      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
         assertEquals(200, resp.statusCode());
         testComplete();
-      }));
+      });
     }));
     await();
   }

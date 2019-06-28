@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
@@ -48,6 +49,13 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
 
     this.clientOptions = clientOptions;
     this.serverOptions = serverOptions.setHandle100ContinueAutomatically(true);
+  }
+
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
+    client = vertx.createHttpClient(clientOptions);
+    server = vertx.createHttpServer(serverOptions);
   }
 
   @Override
@@ -94,12 +102,12 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
       HttpClientMetric metric = metrics.getMetric(pushedReq);
       assertNotNull(metric);
       assertSame(pushedReq, metric.request);
-      pushedReq.handler(onSuccess(resp -> {
+      pushedReq.handler(resp -> {
         resp.endHandler(v -> {
           assertNull(metrics.getMetric(pushedReq));
           complete();
         });
-      }));
+      });
     });
     req.end();
     await();

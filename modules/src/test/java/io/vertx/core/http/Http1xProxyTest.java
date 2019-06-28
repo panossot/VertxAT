@@ -10,13 +10,10 @@
  */
 package io.vertx.core.http;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import org.junit.Test;
 
-import java.util.function.Function;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
@@ -25,35 +22,33 @@ public class Http1xProxyTest extends HttpTestBase {
   @Test
   public void testHttpProxyRequest() throws Exception {
     startProxy(null, ProxyType.HTTP);
-    client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
-    testHttpProxyRequest2(handler -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", handler));
+    testHttpProxyRequest2(client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/"));
   }
 
   @Test
   public void testHttpProxyRequestOverrideClientSsl() throws Exception {
     startProxy(null, ProxyType.HTTP);
-    client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setSsl(true).setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
-    testHttpProxyRequest2(handler -> client.get(new RequestOptions().setSsl(false).setHost("localhost").setPort(8080), handler));
+    testHttpProxyRequest2(client.get(new RequestOptions().setSsl(false).setHost("localhost").setPort(8080)));
   }
 
-  private void testHttpProxyRequest2(Function<Handler<AsyncResult<HttpClientResponse>>, HttpClientRequest> reqFact) throws Exception {
+  private void testHttpProxyRequest2(HttpClientRequest clientReq) throws Exception {
     server.requestHandler(req -> {
       req.response().end();
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = reqFact.apply(onSuccess(resp -> {
+      clientReq.handler(resp -> {
         assertEquals(200, resp.statusCode());
         assertNotNull("request did not go through proxy", proxy.getLastUri());
         assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
         testComplete();
-      }));
-      req.exceptionHandler(this::fail);
-      req.end();
+      });
+      clientReq.exceptionHandler(this::fail);
+      clientReq.end();
     }));
     await();
   }
@@ -62,7 +57,6 @@ public class Http1xProxyTest extends HttpTestBase {
   public void testHttpProxyRequestAuth() throws Exception {
     startProxy("user", ProxyType.HTTP);
 
-    client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())
         .setUsername("user").setPassword("user")));
@@ -72,12 +66,12 @@ public class Http1xProxyTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
         assertEquals(200, resp.statusCode());
         assertNotNull("request did not go through proxy", proxy.getLastUri());
         assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
         testComplete();
-      })).exceptionHandler(th -> fail(th)).end();
+      }).exceptionHandler(th -> fail(th)).end();
     }));
     await();
   }
@@ -85,21 +79,21 @@ public class Http1xProxyTest extends HttpTestBase {
   @Test
   public void testHttpProxyFtpRequest() throws Exception {
     startProxy(null, ProxyType.HTTP);
-    client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
     final String url = "ftp://ftp.gnu.org/gnu/";
     proxy.setForceUri("http://localhost:8080/");
+    HttpClientRequest clientReq = client.getAbs(url);
     server.requestHandler(req -> {
       req.response().end();
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest clientReq = client.getAbs(url, onSuccess(resp -> {
+      clientReq.handler(resp -> {
         assertEquals(200, resp.statusCode());
         assertEquals("request did sent the expected url", url, proxy.getLastUri());
         testComplete();
-      }));
+      });
       clientReq.exceptionHandler(this::fail);
       clientReq.end();
     }));
@@ -110,18 +104,19 @@ public class Http1xProxyTest extends HttpTestBase {
   public void testHttpSocksProxyRequest() throws Exception {
     startProxy(null, ProxyType.SOCKS5);
 
-    client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("localhost").setPort(proxy.getPort())));
 
-    server.requestHandler(req -> req.response().end());
+    server.requestHandler(req -> {
+      req.response().end();
+    });
 
-    startServer();
-
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
-      assertEquals(200, resp.statusCode());
-      assertNotNull("request did not go through proxy", proxy.getLastUri());
-      testComplete();
+    server.listen(onSuccess(s -> {
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+        assertEquals(200, resp.statusCode());
+        assertNotNull("request did not go through proxy", proxy.getLastUri());
+        testComplete();
+      }).exceptionHandler(th -> fail(th)).end();
     }));
     await();
   }
@@ -130,7 +125,6 @@ public class Http1xProxyTest extends HttpTestBase {
   public void testHttpSocksProxyRequestAuth() throws Exception {
     startProxy("user", ProxyType.SOCKS5);
 
-    client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("localhost").setPort(proxy.getPort())
         .setUsername("user").setPassword("user")));
@@ -139,12 +133,12 @@ public class Http1xProxyTest extends HttpTestBase {
       req.response().end();
     });
 
-    startServer();
-
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
-      assertEquals(200, resp.statusCode());
-      assertNotNull("request did not go through proxy", proxy.getLastUri());
-      testComplete();
+    server.listen(onSuccess(s -> {
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+        assertEquals(200, resp.statusCode());
+        assertNotNull("request did not go through proxy", proxy.getLastUri());
+        testComplete();
+      }).exceptionHandler(th -> fail(th)).end();
     }));
     await();
   }

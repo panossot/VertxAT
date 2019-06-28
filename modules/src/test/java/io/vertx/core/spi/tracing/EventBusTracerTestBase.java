@@ -28,7 +28,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.BiConsumer;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public abstract class EventBusTracerTestBase extends VertxTestBase {
 
   VertxTracer tracer;

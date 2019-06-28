@@ -69,13 +69,13 @@ public class HttpCompressionTest extends HttpTestBase {
     });
     startServer(serverWithMaxCompressionLevel);
     clientraw.get(DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST, "some-uri",
-      onSuccess(resp -> {
+      resp -> {
         resp.bodyHandler(responseBuffer -> {
           String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
           assertEquals(COMPRESS_TEST_STRING, responseBody);
           testComplete();
         });
-      })).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end();
+      }).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end();
     await();
   }
 
@@ -108,35 +108,35 @@ public class HttpCompressionTest extends HttpTestBase {
 
   private void testMinCompression() {
     client.request(HttpMethod.GET, DEFAULT_HTTP_PORT - 1, DEFAULT_HTTP_HOST, "some-uri",
-      onSuccess(resp -> {
+        resp -> {
           resp.bodyHandler(responseBuffer -> {
             String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
             assertEquals(COMPRESS_TEST_STRING, responseBody);
             minCompressionTestPassed = true;
             terminateTestWhenAllPassed();
           });
-        })).end();
+        }).end();
   }
 
   private static boolean maxCompressionTestPassed = false;
 
   private void testMaxCompression() {
     client.request(HttpMethod.GET, DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST, "some-uri",
-      onSuccess(resp -> {
+        resp -> {
           resp.bodyHandler(responseBuffer -> {
             String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
             assertEquals(COMPRESS_TEST_STRING, responseBody);
             maxCompressionTestPassed = true;
             terminateTestWhenAllPassed();
           });
-        })).end();
+        }).end();
   }
 
   private static Integer rawMaxCompressionResponseByteCount = null;
 
   private void testRawMaxCompression() {
     clientraw.request(HttpMethod.GET, DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST, "some-uri",
-      onSuccess(resp -> {
+        resp -> {
           resp.bodyHandler(responseBuffer -> {
             String responseCompressedBody = responseBuffer.toString(CharsetUtil.UTF_8);
             Integer responseByteCount = responseCompressedBody.getBytes(CharsetUtil.UTF_8).length;
@@ -146,14 +146,14 @@ public class HttpCompressionTest extends HttpTestBase {
             rawMaxCompressionResponseByteCount = responseByteCount;
             terminateTestWhenAllPassed();
           });
-        })).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end();
+        }).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end();
   }
 
   private static Integer rawMinCompressionResponseByteCount = null;
 
   private void testRawMinCompression() {
     clientraw.request(HttpMethod.GET, DEFAULT_HTTP_PORT - 1, DEFAULT_HTTP_HOST, "some-uri",
-      onSuccess(resp -> {
+        resp -> {
           resp.bodyHandler(responseBuffer -> {
             String responseCompressedBody = responseBuffer.toString(CharsetUtil.UTF_8);
             Integer responseByteCount = responseCompressedBody.getBytes(CharsetUtil.UTF_8).length;
@@ -161,7 +161,7 @@ public class HttpCompressionTest extends HttpTestBase {
             rawMinCompressionResponseByteCount = responseByteCount;
             terminateTestWhenAllPassed();
           });
-        })).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end();
+        }).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end();
   }
 
   private void terminateTestWhenAllPassed() {
@@ -184,12 +184,12 @@ public class HttpCompressionTest extends HttpTestBase {
 
     startServer(serverWithClientDeCompression);
     client.get(DEFAULT_HTTP_PORT+2, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI,
-      onSuccess(resp -> {
+      resp -> {
         resp.bodyHandler(responseBuffer -> {
            assertEquals(compressData,responseBuffer.toString());
           testComplete();
         });
-      })).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end();
+      }).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end();
     await();
   }
 

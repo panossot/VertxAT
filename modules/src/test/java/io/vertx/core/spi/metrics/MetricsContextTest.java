@@ -38,7 +38,6 @@ import java.util.function.Function;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class MetricsContextTest extends VertxTestBase {
 
   @Ignore

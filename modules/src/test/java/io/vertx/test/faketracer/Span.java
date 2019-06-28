@@ -20,7 +20,6 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 /**
  * @author Pavol Loffay
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class Span {
   public final int traceId;
   public final int parentId;

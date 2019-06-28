@@ -43,7 +43,6 @@ import static org.hamcrest.core.Is.is;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class MetricsTest extends VertxTestBase {
 
   private static final String ADDRESS1 = "some-address1";

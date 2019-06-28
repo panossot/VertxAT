@@ -42,7 +42,7 @@ import java.util.function.Supplier;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+
 public class DeploymentTest extends VertxTestBase {
 
   public void setUp() throws Exception {

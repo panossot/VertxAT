@@ -28,8 +28,8 @@ import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.streams.ReadStream;
@@ -68,7 +68,7 @@ import static io.vertx.test.core.TestUtils.*;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1"})
 public class NetTest extends VertxTestBase {
 
   private static final Logger log = LoggerFactory.getLogger(NetTest.class);
@@ -174,6 +174,10 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setSoLinger(rand));
     assertEquals(rand, options.getSoLinger());
     assertIllegalArgumentException(() -> options.setSoLinger(-2));
+
+    assertFalse(options.isUsePooledBuffers());
+    assertEquals(options, options.setUsePooledBuffers(true));
+    assertTrue(options.isUsePooledBuffers());
 
     rand = TestUtils.randomPositiveInt();
     assertEquals(0, options.getIdleTimeout());
@@ -284,6 +288,10 @@ public class NetTest extends VertxTestBase {
     assertEquals(rand, options.getSoLinger());
     assertIllegalArgumentException(() -> options.setSoLinger(-2));
 
+    assertFalse(options.isUsePooledBuffers());
+    assertEquals(options, options.setUsePooledBuffers(true));
+    assertTrue(options.isUsePooledBuffers());
+
     rand = TestUtils.randomPositiveInt();
     assertEquals(0, options.getIdleTimeout());
     assertEquals(options, options.setIdleTimeout(rand));
@@ -359,6 +367,7 @@ public class NetTest extends VertxTestBase {
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
+    boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     String hostnameVerificationAlgorithm = TestUtils.randomAlphaString(10);
@@ -388,6 +397,7 @@ public class NetTest extends VertxTestBase {
     options.setTcpNoDelay(tcpNoDelay);
     options.setTcpKeepAlive(tcpKeepAlive);
     options.setSoLinger(soLinger);
+    options.setUsePooledBuffers(usePooledBuffers);
     options.setIdleTimeout(idleTimeout);
     options.setKeyStoreOptions(keyStoreOptions);
     options.setTrustStoreOptions(trustStoreOptions);
@@ -404,7 +414,33 @@ public class NetTest extends VertxTestBase {
     options.setSslHandshakeTimeout(sslHandshakeTimeout);
 
     NetClientOptions copy = new NetClientOptions(options);
-    assertEquals(options.toJson(), copy.toJson());
+    assertEquals(sendBufferSize, copy.getSendBufferSize());
+    assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
+    assertEquals(reuseAddress, copy.isReuseAddress());
+    assertEquals(trafficClass, copy.getTrafficClass());
+    assertEquals(tcpNoDelay, copy.isTcpNoDelay());
+    assertEquals(tcpKeepAlive, copy.isTcpKeepAlive());
+    assertEquals(soLinger, copy.getSoLinger());
+    assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
+    assertEquals(idleTimeout, copy.getIdleTimeout());
+    assertEquals(ssl, copy.isSsl());
+    assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
+    assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
+    assertNotSame(trustStoreOptions, copy.getTrustOptions());
+    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
+    assertEquals(1, copy.getEnabledCipherSuites().size());
+    assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
+    assertEquals(connectTimeout, copy.getConnectTimeout());
+    assertEquals(trustAll, copy.isTrustAll());
+    assertEquals(1, copy.getCrlPaths().size());
+    assertEquals(crlPath, copy.getCrlPaths().get(0));
+    assertEquals(1, copy.getCrlValues().size());
+    assertEquals(crlValue, copy.getCrlValues().get(0));
+    assertEquals(reconnectAttempts, copy.getReconnectAttempts());
+    assertEquals(reconnectInterval, copy.getReconnectInterval());
+    assertEquals(useAlpn, copy.isUseAlpn());
+    assertEquals(sslEngine, copy.getSslEngineOptions());
+    assertEquals(hostnameVerificationAlgorithm, copy.getHostnameVerificationAlgorithm());
   }
 
   @Test
@@ -420,6 +456,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(def.isTcpNoDelay(), json.isTcpNoDelay());
     assertEquals(def.isTcpKeepAlive(), json.isTcpKeepAlive());
     assertEquals(def.getSoLinger(), json.getSoLinger());
+    assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngineOptions(), json.getSslEngineOptions());
@@ -437,6 +474,7 @@ public class NetTest extends VertxTestBase {
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
+    boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     JksOptions keyStoreOptions = new JksOptions();
@@ -469,6 +507,7 @@ public class NetTest extends VertxTestBase {
         .put("tcpNoDelay", tcpNoDelay)
         .put("tcpKeepAlive", tcpKeepAlive)
         .put("soLinger", soLinger)
+        .put("usePooledBuffers", usePooledBuffers)
         .put("idleTimeout", idleTimeout)
         .put("ssl", ssl)
         .put("enabledCipherSuites", new JsonArray().add(enabledCipher))
@@ -493,6 +532,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
     assertEquals(tcpNoDelay, options.isTcpNoDelay());
     assertEquals(soLinger, options.getSoLinger());
+    assertEquals(usePooledBuffers, options.isUsePooledBuffers());
     assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
     assertEquals(sslHandshakeTimeout, options.getSslHandshakeTimeout());
@@ -581,6 +621,7 @@ public class NetTest extends VertxTestBase {
     options.setTcpNoDelay(tcpNoDelay);
     options.setTcpKeepAlive(tcpKeepAlive);
     options.setSoLinger(soLinger);
+    options.setUsePooledBuffers(usePooledBuffers);
     options.setIdleTimeout(idleTimeout);
     options.setSsl(ssl);
     options.setKeyStoreOptions(keyStoreOptions);
@@ -597,7 +638,32 @@ public class NetTest extends VertxTestBase {
     options.setSslHandshakeTimeout(sslHandshakeTimeout);
 
     NetServerOptions copy = new NetServerOptions(options);
-    assertEquals(options.toJson(), copy.toJson());
+    assertEquals(sendBufferSize, copy.getSendBufferSize());
+    assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
+    assertEquals(reuseAddress, copy.isReuseAddress());
+    assertEquals(trafficClass, copy.getTrafficClass());
+    assertEquals(tcpNoDelay, copy.isTcpNoDelay());
+    assertEquals(tcpKeepAlive, copy.isTcpKeepAlive());
+    assertEquals(soLinger, copy.getSoLinger());
+    assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
+    assertEquals(idleTimeout, copy.getIdleTimeout());
+    assertEquals(ssl, copy.isSsl());
+    assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
+    assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
+    assertNotSame(trustStoreOptions, copy.getTrustOptions());
+    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
+    assertEquals(1, copy.getEnabledCipherSuites().size());
+    assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
+    assertEquals(1, copy.getCrlPaths().size());
+    assertEquals(crlPath, copy.getCrlPaths().get(0));
+    assertEquals(1, copy.getCrlValues().size());
+    assertEquals(crlValue, copy.getCrlValues().get(0));
+    assertEquals(port, copy.getPort());
+    assertEquals(host, copy.getHost());
+    assertEquals(acceptBacklog, copy.getAcceptBacklog());
+    assertEquals(useAlpn, copy.isUseAlpn());
+    assertEquals(sslEngine, copy.getSslEngineOptions());
+    assertEquals(sni, copy.isSni());
   }
 
   @Test
@@ -605,11 +671,13 @@ public class NetTest extends VertxTestBase {
   public void testDefaultServerOptionsJson() {
     NetServerOptions def = new NetServerOptions();
     NetServerOptions json = new NetServerOptions(new JsonObject());
+    assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
     assertEquals(def.getCrlPaths(), json.getCrlPaths());
     assertEquals(def.getCrlValues(), json.getCrlValues());
     assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());
     assertEquals(def.getPort(), json.getPort());
     assertEquals(def.getHost(), json.getHost());
+    assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
     assertEquals(def.getCrlPaths(), json.getCrlPaths());
     assertEquals(def.getCrlValues(), json.getCrlValues());
     assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());
@@ -618,6 +686,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(def.isTcpNoDelay(), json.isTcpNoDelay());
     assertEquals(def.isTcpKeepAlive(), json.isTcpKeepAlive());
     assertEquals(def.getSoLinger(), json.getSoLinger());
+    assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngineOptions(), json.getSslEngineOptions());
@@ -691,6 +760,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
     assertEquals(tcpNoDelay, options.isTcpNoDelay());
     assertEquals(soLinger, options.getSoLinger());
+    assertEquals(usePooledBuffers, options.isUsePooledBuffers());
     assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
     assertEquals(sslHandshakeTimeout, options.getSslHandshakeTimeout());
@@ -1570,15 +1640,17 @@ public class NetTest extends VertxTestBase {
             if (upgradedServer.compareAndSet(false, true)) {
               indicatedServerName = socket.indicatedServerName();
               assertFalse(socket.isSsl());
-              socket.upgradeToSsl(ar -> {
-                assertEquals(shouldPass, ar.succeeded());
-                if (ar.succeeded()) {
-                  certificateChainChecker.accept(socket);
-                  upgradedServerCount.incrementAndGet();
-                  assertTrue(socket.isSsl());
+              socket.exceptionHandler(err -> {
+                if (shouldPass) {
+                  fail("Should not fail to connect");
                 } else {
                   complete();
                 }
+              });
+              socket.upgradeToSsl(v -> {
+                certificateChainChecker.accept(socket);
+                upgradedServerCount.incrementAndGet();
+                assertTrue(socket.isSsl());
               });
             } else {
               assertTrue(socket.isSsl());
@@ -1646,22 +1718,24 @@ public class NetTest extends VertxTestBase {
               if (startTLS && !upgradedClient.get()) {
                 upgradedClient.set(true);
                 assertFalse(socket.isSsl());
-                Handler<AsyncResult<Void>> handler;
-                if (shouldPass) {
-                  handler = onSuccess(v -> {
-                    assertTrue(socket.isSsl());
-                    try {
-                      clientPeerCert = socket.peerCertificateChain()[0];
-                    } catch (SSLPeerUnverifiedException ignore) {
-                    }
-                    // Now send the rest
-                    for (int i = 1; i < numChunks; i++) {
-                      socket.write(toSend.get(i));
-                    }
-                  });
-                } else {
-                  handler = onFailure(err -> complete());
-                }
+                Handler<Void> handler = v -> {
+                  assertTrue(socket.isSsl());
+                  try {
+                    clientPeerCert = socket.peerCertificateChain()[0];
+                  } catch (SSLPeerUnverifiedException ignore) {
+                  }
+                  // Now send the rest
+                  for (int i = 1; i < numChunks; i++) {
+                    socket.write(toSend.get(i));
+                  }
+                };
+                socket.exceptionHandler(err -> {
+                  if (shouldPass) {
+                    fail("Should not fail to connect");
+                  } else {
+                    complete();
+                  }
+                });
                 if (serverName != null) {
                   socket.upgradeToSsl(serverName, handler);
                 } else {
@@ -2270,6 +2344,31 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testInMultithreadedWorker() throws Exception {
+    class MyVerticle extends AbstractVerticle {
+      @Override
+      public void start() {
+        try {
+          server = vertx.createNetServer(new NetServerOptions());
+          fail("Should throw exception");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        try {
+          client = vertx.createNetClient(new NetClientOptions());
+          fail("Should throw exception");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        testComplete();
+      }
+    }
+    MyVerticle verticle = new MyVerticle();
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
+    await();
+  }
+
+  @Test
   public void testContexts() throws Exception {
     int numConnections = 10;
 
@@ -2814,9 +2913,13 @@ public class NetTest extends VertxTestBase {
       client.connect(1234, "localhost", ar2 -> {
         assertTrue(ar2.succeeded());
         NetSocket ns = ar2.result();
-        ns.upgradeToSsl(onSuccess(v2 -> {
+        ns.exceptionHandler(th -> {
+          fail(th);
+        });
+        ns.upgradeToSsl(v2 -> {
+          // failure would occur before upgradeToSsl completes
           testComplete();
-        }));
+        });
       });
     });
     await();
@@ -2952,9 +3055,12 @@ public class NetTest extends VertxTestBase {
       client.connect(4043, "localhost", arSocket -> {
         if (arSocket.succeeded()) {
           NetSocket ns = arSocket.result();
-          ns.upgradeToSsl(onSuccess(v -> {
+          ns.exceptionHandler(th -> {
+            fail(th);
+          });
+          ns.upgradeToSsl(v -> {
             testComplete();
-          }));
+          });
         } else {
           fail(ar.cause());
         }
@@ -2980,9 +3086,12 @@ public class NetTest extends VertxTestBase {
       client.connect(4043, "127.0.0.1", arSocket -> {
         if (arSocket.succeeded()) {
           NetSocket ns = arSocket.result();
-          ns.upgradeToSsl(onFailure(err -> {
+          ns.closeHandler(v -> {
             testComplete();
-          }));
+          });
+          ns.upgradeToSsl(v -> {
+            fail("this test should fail");
+          });
         } else {
           fail(ar.cause());
         }
@@ -3160,13 +3269,13 @@ public class NetTest extends VertxTestBase {
     });
     startServer(SocketAddress.inetSocketAddress(1234, "localhost"));
     HttpClient client = vertx.createHttpClient(clientOptions);
-    client.getNow(1234, "localhost", "/somepath", onSuccess(resp -> {
+    client.getNow(1234, "localhost", "/somepath", resp -> {
       assertEquals(200, resp.statusCode());
       resp.bodyHandler(buff -> {
         assertEquals("Hello World", buff.toString());
         complete();
       });
-    }));
+    });
     await();
   }
 
@@ -3500,11 +3609,14 @@ public class NetTest extends VertxTestBase {
         NetSocket socket = res.result();
 
         assertFalse(socket.isSsl());
-        socket.upgradeToSsl(onFailure(err -> {
+        socket.upgradeToSsl(v -> {
+          fail("this should never be called because of failure of handshake");
+        });
+        socket.exceptionHandler(err -> {
           assertTrue(err instanceof SSLException);
           assertEquals("handshake timed out", err.getMessage());
           testComplete();
-        }));
+        });
       });
     });
     await();

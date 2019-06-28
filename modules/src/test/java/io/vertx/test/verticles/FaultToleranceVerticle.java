@@ -19,16 +19,17 @@ import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
 /**
  * @author Thomas Segismont
  */
+import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
+
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class FaultToleranceVerticle extends AbstractVerticle {
   private static final Logger log = LoggerFactory.getLogger(FaultToleranceVerticle.class);
