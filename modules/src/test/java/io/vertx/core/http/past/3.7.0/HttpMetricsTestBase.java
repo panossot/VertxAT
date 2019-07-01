@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.7.0"})
 public abstract class HttpMetricsTestBase extends HttpTestBase {
 
   private final HttpVersion protocol;
@@ -60,7 +60,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     return options;
   }
 
-  @Test
+  
   public void testHttpMetricsLifecycle() throws Exception {
     int numBuffers = 10;
     int chunkSize = 1000;
@@ -124,19 +124,14 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     AsyncTestBase.assertWaitUntil(() -> metrics.endpoints().isEmpty());
     assertEquals(null, metrics.connectionCount("localhost:8080"));
     AsyncTestBase.assertWaitUntil(() -> !serverMetric.get().socket.connected.get());
-    try {
-      AsyncTestBase.assertWaitUntil(() -> contentLength == serverMetric.get().socket.bytesRead.get());
-    } catch (Exception e) {
-      System.out.println(contentLength + " == " + serverMetric.get().socket.bytesRead.get());
-      throw e;
-    }
+    AsyncTestBase.assertWaitUntil(() -> contentLength == serverMetric.get().socket.bytesRead.get());
     AsyncTestBase.assertWaitUntil(() -> contentLength  == serverMetric.get().socket.bytesWritten.get());
     AsyncTestBase.assertWaitUntil(() -> !clientMetric.get().socket.connected.get());
     assertEquals(contentLength, clientMetric.get().socket.bytesRead.get());
     assertEquals(contentLength, clientMetric.get().socket.bytesWritten.get());
   }
 
-  @Test
+  
   public void testHttpClientLifecycle() throws Exception {
 
     // The test cannot pass for HTTP/2 upgrade for now
@@ -209,7 +204,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     assertEquals(1, reqMetric.responseBegin.get());
   }
 
-  @Test
+  
   public void testClientConnectionClosed() throws Exception {
     server.requestHandler(req -> {
       req.response().setChunked(true).write(Buffer.buffer("some-data"));
@@ -232,7 +227,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testServerConnectionClosed() throws Exception {
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setIdleTimeout(2));

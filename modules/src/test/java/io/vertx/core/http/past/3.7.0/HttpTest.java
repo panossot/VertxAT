@@ -74,7 +74,7 @@ public abstract class HttpTest extends HttpTestBase {
     return new HttpClientOptions();
   }
 
-  @Test
+  
   public void testClientRequestArguments() throws Exception {
     HttpClientRequest req = client.request(HttpMethod.PUT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
     assertNullPointerException(() -> req.putHeader((String) null, "someValue"));
@@ -91,7 +91,7 @@ public abstract class HttpTest extends HttpTestBase {
     assertIllegalArgumentException(() -> req.setTimeout(0));
   }
 
-  @Test
+  
   public void testClientChaining() {
     server.requestHandler(noOpHandler());
 
@@ -108,7 +108,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testListenSocketAddress() {
     NetClient netClient = vertx.createNetClient();
     server = vertx.createHttpServer().requestHandler(req -> req.response().end());
@@ -130,7 +130,7 @@ public abstract class HttpTest extends HttpTestBase {
     }
   }
 
-  @Test
+  
   public void testListenDomainSocketAddress() throws Exception {
     Vertx vx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
     Assume.assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
@@ -156,7 +156,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
 
-  @Test
+  
   public void testLowerCaseHeaders() {
     server.requestHandler(req -> {
       assertEquals("foo", req.headers().get("Foo"));
@@ -203,7 +203,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testServerActualPortWhenSet() {
     server
         .requestHandler(request -> {
@@ -222,7 +222,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testServerActualPortWhenZero() {
     server = vertx.createHttpServer(createBaseServerOptions().setPort(0).setHost(DEFAULT_HTTP_HOST));
     server
@@ -242,7 +242,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testServerActualPortWhenZeroPassedInListen() {
     server = vertx.createHttpServer(new HttpServerOptions(createBaseServerOptions()).setHost(DEFAULT_HTTP_HOST));
     server
@@ -262,7 +262,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testRequestNPE() {
     String uri = "/some-uri?foo=bar";
     TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, uri, null));
@@ -278,7 +278,7 @@ public abstract class HttpTest extends HttpTestBase {
     }));
   }
 
-  @Test
+  
   public void testInvalidAbsoluteURI() {
     try {
       client.requestAbs(HttpMethod.GET, "ijdijwidjqwoijd192d192192ej12d", resp -> {
@@ -289,7 +289,7 @@ public abstract class HttpTest extends HttpTestBase {
     }
   }
 
-  @Test
+  
   public void testPutHeadersOnRequest() {
     server.requestHandler(req -> {
       assertEquals("bar", req.headers().get("foo"));
@@ -305,7 +305,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testPutHeaderReplacesPreviousHeaders() throws Exception {
     server.requestHandler(req ->
       req.response()
@@ -321,121 +321,121 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testSimpleGET() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.GET, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimplePUT() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.PUT, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimplePOST() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.POST, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimpleDELETE() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.DELETE, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimpleHEAD() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.HEAD, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimpleTRACE() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.TRACE, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimpleCONNECT() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.CONNECT, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimpleOPTIONS() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.OPTIONS, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimplePATCH() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.PATCH, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimpleGETAbsolute() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.GET, true, resp -> testComplete());
   }
 
-  @Test
+  
   public void testEmptyPathGETAbsolute() {
     String uri = "";
     testSimpleRequest(uri, HttpMethod.GET, true, resp -> testComplete());
   }
 
-  @Test
+  
   public void testNoPathButQueryGETAbsolute() {
     String uri = "?foo=bar";
     testSimpleRequest(uri, HttpMethod.GET, true, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimplePUTAbsolute() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.PUT, true, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimplePOSTAbsolute() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.POST, true, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimpleDELETEAbsolute() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.DELETE, true, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimpleHEADAbsolute() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.HEAD, true, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimpleTRACEAbsolute() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.TRACE, true, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimpleCONNECTAbsolute() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.CONNECT, true, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimpleOPTIONSAbsolute() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.OPTIONS, true, resp -> testComplete());
   }
 
-  @Test
+  
   public void testSimplePATCHAbsolute() {
     String uri = "/some-uri?foo=bar";
     testSimpleRequest(uri, HttpMethod.PATCH, true, resp -> testComplete());
@@ -482,7 +482,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testServerChaining() {
     server.requestHandler(req -> {
       assertTrue(req.response().setChunked(true) == req.response());
@@ -498,7 +498,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testServerChainingSendFile() throws Exception {
     File file = setupFile("test-server-chaining.dat", "blah");
     server.requestHandler(req -> {
@@ -515,7 +515,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testResponseEndHandlers1() {
     waitFor(2);
     AtomicInteger cnt = new AtomicInteger();
@@ -541,7 +541,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testResponseEndHandlers2() {
     waitFor(2);
     AtomicInteger cnt = new AtomicInteger();
@@ -571,7 +571,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testResponseEndHandlersChunkedResponse() {
     waitFor(2);
     AtomicInteger cnt = new AtomicInteger();
@@ -608,7 +608,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testResponseEndHandlersSendFile() throws Exception {
     waitFor(2);
     AtomicInteger cnt = new AtomicInteger();
@@ -639,27 +639,27 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testAbsoluteURI() {
     testURIAndPath("http://localhost:" + DEFAULT_HTTP_PORT + "/this/is/a/path/foo.html", "/this/is/a/path/foo.html");
   }
 
-  @Test
+  
   public void testRelativeURI() {
     testURIAndPath("/this/is/a/path/foo.html", "/this/is/a/path/foo.html");
   }
 
-  @Test
+  
   public void testAbsoluteURIWithHttpSchemaInQuery() {
     testURIAndPath("http://localhost:" + DEFAULT_HTTP_PORT + "/correct/path?url=http://localhost:8008/wrong/path", "/correct/path");
   }
 
-  @Test
+  
   public void testRelativeURIWithHttpSchemaInQuery() {
     testURIAndPath("/correct/path?url=http://localhost:8008/wrong/path", "/correct/path");
   }
 
-  @Test
+  
   public void testAbsoluteURIEmptyPath() {
     testURIAndPath("http://localhost:" + DEFAULT_HTTP_PORT + "/", "/");
   }
@@ -678,32 +678,32 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testParamUmlauteDecoding() throws UnsupportedEncodingException {
     testParamDecoding("\u00e4\u00fc\u00f6");
   }
 
-  @Test
+  
   public void testParamPlusDecoding() throws UnsupportedEncodingException {
     testParamDecoding("+");
   }
 
-  @Test
+  
   public void testParamPercentDecoding() throws UnsupportedEncodingException {
     testParamDecoding("%");
   }
 
-  @Test
+  
   public void testParamSpaceDecoding() throws UnsupportedEncodingException {
     testParamDecoding(" ");
   }
 
-  @Test
+  
   public void testParamNormalDecoding() throws UnsupportedEncodingException {
     testParamDecoding("hello");
   }
 
-  @Test
+  
   public void testParamAltogetherDecoding() throws UnsupportedEncodingException {
     testParamDecoding("\u00e4\u00fc\u00f6+% hello");
   }
@@ -732,12 +732,12 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testParamsAmpersand() {
     testParams('&');
   }
 
-  @Test
+  
   public void testParamsSemiColon() {
     testParams(';');
   }
@@ -762,7 +762,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testNoParams() {
     server.requestHandler(req -> {
       assertNull(req.query());
@@ -777,7 +777,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testDefaultRequestHeaders() {
     server.requestHandler(req -> {
       if (req.version() == HttpVersion.HTTP_1_1) {
@@ -800,7 +800,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testRequestHeadersWithCharSequence() {
     HashMap<CharSequence, String> headers = new HashMap<>();
     headers.put(HttpHeaders.TEXT_HTML, "text/html");
@@ -828,12 +828,12 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testRequestHeadersPutAll() {
     testRequestHeaders(false);
   }
 
-  @Test
+  
   public void testRequestHeadersIndividually() {
     testRequestHeaders(true);
   }
@@ -865,12 +865,12 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testResponseHeadersPutAll() {
     testResponseHeaders(false);
   }
 
-  @Test
+  
   public void testResponseHeadersIndividually() {
     testResponseHeaders(true);
   }
@@ -903,7 +903,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testResponseHeadersWithCharSequence() {
     HashMap<CharSequence, String> headers = new HashMap<>();
     headers.put(HttpHeaders.TEXT_HTML, "text/html");
@@ -929,17 +929,17 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testResponseMultipleSetCookieInHeader() {
     testResponseMultipleSetCookie(true, false);
   }
 
-  @Test
+  
   public void testResponseMultipleSetCookieInTrailer() {
     testResponseMultipleSetCookie(false, true);
   }
 
-  @Test
+  
   public void testResponseMultipleSetCookieInHeaderAndTrailer() {
     testResponseMultipleSetCookie(true, true);
   }
@@ -981,7 +981,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testUseRequestAfterComplete() {
     server.requestHandler(noOpHandler());
 
@@ -1011,7 +1011,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testRequestBodyBufferAtEnd() {
     Buffer body = TestUtils.randomBuffer(1000);
     server.requestHandler(req -> req.bodyHandler(buffer -> {
@@ -1026,17 +1026,17 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testRequestBodyStringDefaultEncodingAtEnd() {
     testRequestBodyStringAtEnd(null);
   }
 
-  @Test
+  
   public void testRequestBodyStringUTF8AtEnd() {
     testRequestBodyStringAtEnd("UTF-8");
   }
 
-  @Test
+  
   public void testRequestBodyStringUTF16AtEnd() {
     testRequestBodyStringAtEnd("UTF-16");
   }
@@ -1070,12 +1070,12 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testRequestBodyWriteChunked() {
     testRequestBodyWrite(true);
   }
 
-  @Test
+  
   public void testRequestBodyWriteNonChunked() {
     testRequestBodyWrite(false);
   }
@@ -1111,32 +1111,32 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testRequestBodyWriteStringChunkedDefaultEncoding() {
     testRequestBodyWriteString(true, null);
   }
 
-  @Test
+  
   public void testRequestBodyWriteStringChunkedUTF8() {
     testRequestBodyWriteString(true, "UTF-8");
   }
 
-  @Test
+  
   public void testRequestBodyWriteStringChunkedUTF16() {
     testRequestBodyWriteString(true, "UTF-16");
   }
 
-  @Test
+  
   public void testRequestBodyWriteStringNonChunkedDefaultEncoding() {
     testRequestBodyWriteString(false, null);
   }
 
-  @Test
+  
   public void testRequestBodyWriteStringNonChunkedUTF8() {
     testRequestBodyWriteString(false, "UTF-8");
   }
 
-  @Test
+  
   public void testRequestBodyWriteStringNonChunkedUTF16() {
     testRequestBodyWriteString(false, "UTF-16");
   }
@@ -1178,7 +1178,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testRequestWrite() {
     int times = 3;
     Buffer chunk = TestUtils.randomBuffer(1000);
@@ -1207,7 +1207,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testConnectWithoutResponseHandler() throws Exception {
     try {
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).end();
@@ -1251,7 +1251,7 @@ public abstract class HttpTest extends HttpTestBase {
     }
   }
 
-  @Test
+  
   public void testClientExceptionHandlerCalledWhenFailingToConnect() throws Exception {
     client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
         exceptionHandler(error -> testComplete()).
@@ -1260,7 +1260,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testClientExceptionHandlerCalledWhenServerTerminatesConnection() throws Exception {
     int numReqs = 10;
     CountDownLatch latch = new CountDownLatch(numReqs);
@@ -1276,7 +1276,7 @@ public abstract class HttpTest extends HttpTestBase {
     awaitLatch(latch);
   }
 
-  @Test
+  
   public void testClientExceptionHandlerCalledWhenServerTerminatesConnectionAfterPartialResponse() throws Exception {
     server.requestHandler(request -> {
       //Write partial response then close connection before completing it
@@ -1289,7 +1289,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testClientExceptionHandlerCalledWhenExceptionOnDataHandler() throws Exception {
     server.requestHandler(request -> {
       request.response().end("foo");
@@ -1305,7 +1305,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testClientExceptionHandlerCalledWhenExceptionOnBodyHandler() throws Exception {
     server.requestHandler(request -> {
       request.response().end("foo");
@@ -1321,7 +1321,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testNoExceptionHandlerCalledWhenResponseEnded() throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
@@ -1345,7 +1345,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testServerExceptionHandlerOnClose() {
     vertx.createHttpServer().requestHandler(req -> {
       HttpServerResponse resp = req.response();
@@ -1392,7 +1392,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testClientRequestExceptionHandlerCalledWhenConnectionClosed() throws Exception {
     server.requestHandler(req -> {
       req.handler(buff -> {
@@ -1412,7 +1412,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testClientResponseExceptionHandlerCalledWhenConnectionClosed() throws Exception {
     AtomicReference<HttpConnection> conn = new AtomicReference<>();
     server.requestHandler(req -> {
@@ -1431,23 +1431,23 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testDefaultStatus() {
     testStatusCode(-1, null);
   }
 
-  @Test
+  
   public void testDefaultOther() {
     // Doesn't really matter which one we choose
     testStatusCode(405, null);
   }
 
-  @Test
+  
   public void testOverrideStatusMessage() {
     testStatusCode(404, "some message");
   }
 
-  @Test
+  
   public void testOverrideDefaultStatusMessage() {
     testStatusCode(-1, "some other message");
   }
@@ -1485,12 +1485,12 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testResponseTrailersPutAll() {
     testResponseTrailers(false);
   }
 
-  @Test
+  
   public void testResponseTrailersPutIndividually() {
     testResponseTrailers(true);
   }
@@ -1526,7 +1526,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testResponseNoTrailers() {
     server.requestHandler(req -> {
       req.response().setChunked(true);
@@ -1545,7 +1545,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testUseResponseAfterComplete() throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
@@ -1578,7 +1578,7 @@ public abstract class HttpTest extends HttpTestBase {
     assertIllegalStateException(() -> resp.sendFile("asokdasokd"));
   }
 
-  @Test
+  
   public void testResponseBodyBufferAtEnd() {
     Buffer body = TestUtils.randomBuffer(1000);
 
@@ -1598,12 +1598,12 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testResponseBodyWriteChunked() {
     testResponseBodyWrite(true);
   }
 
-  @Test
+  
   public void testResponseBodyWriteNonChunked() {
     testResponseBodyWrite(false);
   }
@@ -1644,32 +1644,32 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testResponseBodyWriteStringChunkedDefaultEncoding() {
     testResponseBodyWriteString(true, null);
   }
 
-  @Test
+  
   public void testResponseBodyWriteStringChunkedUTF8() {
     testResponseBodyWriteString(true, "UTF-8");
   }
 
-  @Test
+  
   public void testResponseBodyWriteStringChunkedUTF16() {
     testResponseBodyWriteString(true, "UTF-16");
   }
 
-  @Test
+  
   public void testResponseBodyWriteStringNonChunkedDefaultEncoding() {
     testResponseBodyWriteString(false, null);
   }
 
-  @Test
+  
   public void testResponseBodyWriteStringNonChunkedUTF8() {
     testResponseBodyWriteString(false, "UTF-8");
   }
 
-  @Test
+  
   public void testResponseBodyWriteStringNonChunkedUTF16() {
     testResponseBodyWriteString(false, "UTF-16");
   }
@@ -1710,7 +1710,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testResponseWrite() {
     Buffer body = TestUtils.randomBuffer(1000);
 
@@ -1732,21 +1732,21 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testSendFile() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
     sendFile("test-send-file.html", content, false,
       handler -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, handler));
   }
 
-  @Test
+  
   public void testSendFileWithHandler() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
     sendFile("test-send-file.html", content, true,
       handler -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, handler));
   }
 
-  @Test
+  
   public void testSendFileWithConnectionCloseHeader() throws Exception {
     String content = TestUtils.randomUnicodeString(1024 * 1024 * 2);
     sendFile("test-send-file.html", content, false,
@@ -1782,7 +1782,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testSendNonExistingFile() throws Exception {
     server.requestHandler(req -> {
       final Context ctx = vertx.getOrCreateContext();
@@ -1806,7 +1806,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testSendFileOverrideHeaders() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
     File file = setupFile("test-send-file.html", content);
@@ -1831,7 +1831,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testSendFileNotFound() throws Exception {
 
     server.requestHandler(req -> {
@@ -1849,7 +1849,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testSendFileNotFoundWithHandler() throws Exception {
 
     server.requestHandler(req -> {
@@ -1869,7 +1869,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testSendFileDirectoryWithHandler() throws Exception {
 
     File dir = testFolder.newFolder();
@@ -1891,7 +1891,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testSendOpenRangeFileFromClasspath() {
     vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
       res.response().sendFile("webroot/somefile.html", 6);
@@ -1906,7 +1906,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testSendRangeFileFromClasspath() {
     vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
       res.response().sendFile("webroot/somefile.html", 6, 6);
@@ -1921,7 +1921,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void test100ContinueHandledAutomatically() throws Exception {
     Buffer toSend = TestUtils.randomBuffer(1000);
 
@@ -1948,7 +1948,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void test100ContinueHandledManually() throws Exception {
 
     server.close();
@@ -1980,7 +1980,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void test100ContinueRejectedManually() throws Exception {
 
     server.close();
@@ -2009,7 +2009,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testClientDrainHandler() {
     pausingServer(resumeFuture -> {
       HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
@@ -2035,7 +2035,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testClientRequestExceptionHandlerCalledWhenExceptionOnDrainHandler() {
     pausingServer(resumeFuture -> {
       HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
@@ -2086,7 +2086,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.listen(onSuccess(s -> consumer.accept(resumeFuture)));
   }
 
-  @Test
+  
   public void testServerDrainHandler() {
     drainingServer(resumeFuture -> {
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
@@ -2127,7 +2127,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.listen(onSuccess(s -> consumer.accept(resumeFuture)));
   }
 
-  @Test
+  
   public void testConnectionErrorsGetReportedToRequest() throws InterruptedException {
     AtomicInteger req1Exceptions = new AtomicInteger();
     AtomicInteger req2Exceptions = new AtomicInteger();
@@ -2171,7 +2171,7 @@ public abstract class HttpTest extends HttpTestBase {
     testComplete();
   }
 
-  @Test
+  
   public void testRequestTimesoutWhenIndicatedPeriodExpiresWithoutAResponseFromRemoteServer() {
     server.requestHandler(noOpHandler()); // No response handler so timeout triggers
     AtomicBoolean failed = new AtomicBoolean();
@@ -2194,7 +2194,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
     AtomicReference<Throwable> exception = new AtomicReference<>();
     // There is no server running, should fail to connect
@@ -2214,7 +2214,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testRequestTimeoutCanceledWhenRequestEndsNormally() {
     server.requestHandler(req -> req.response().end());
 
@@ -2236,7 +2236,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testHttpClientRequestTimeoutResetsTheConnection() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
@@ -2259,7 +2259,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testConnectInvalidPort() {
     client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
         exceptionHandler(t -> testComplete()).
@@ -2268,7 +2268,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testConnectInvalidHost() {
     client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
         exceptionHandler(t -> testComplete()).
@@ -2277,7 +2277,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testSetHandlersAfterListening() throws Exception {
     server.requestHandler(noOpHandler());
 
@@ -2290,7 +2290,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testSetHandlersAfterListening2() throws Exception {
     server.requestHandler(noOpHandler());
 
@@ -2300,18 +2300,18 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testListenNoHandlers() throws Exception {
     assertIllegalStateException(() -> server.listen(ar -> {
     }));
   }
 
-  @Test
+  
   public void testListenNoHandlers2() throws Exception {
     assertIllegalStateException(() -> server.listen());
   }
 
-  @Test
+  
   public void testListenTwice() throws Exception {
     server.requestHandler(noOpHandler());
     server.listen(onSuccess(v -> testComplete()));
@@ -2319,7 +2319,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testListenTwice2() throws Exception {
     server.requestHandler(noOpHandler());
     server.listen(ar -> {
@@ -2330,7 +2330,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testHeadCanSetContentLength() {
     server.requestHandler(req -> {
       assertEquals(HttpMethod.HEAD, req.method());
@@ -2350,84 +2350,84 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testHeadDoesNotSetAutomaticallySetContentLengthHeader() throws Exception {
     MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.HEAD, 200, MultiMap.caseInsensitiveMultiMap());
     assertNull(respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
-  @Test
+  
   public void testHeadAllowsContentLengthHeader() throws Exception {
     MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.HEAD, 200, MultiMap.caseInsensitiveMultiMap().set("content-length", "34"));
     assertEquals("34", respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
-  @Test
+  
   public void testHeadRemovesTransferEncodingHeader() throws Exception {
     MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.HEAD, 200, MultiMap.caseInsensitiveMultiMap().set("transfer-encoding", "chunked"));
     assertNull(respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
-  @Test
+  
   public void testNoContentRemovesContentLengthHeader() throws Exception {
     MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 204, MultiMap.caseInsensitiveMultiMap().set("content-length", "34"));
     assertNull(respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
-  @Test
+  
   public void testNoContentRemovesTransferEncodingHeader() throws Exception {
     MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 204, MultiMap.caseInsensitiveMultiMap().set("transfer-encoding", "chunked"));
     assertNull(respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
-  @Test
+  
   public void testResetContentSetsContentLengthHeader() throws Exception {
     MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 205, MultiMap.caseInsensitiveMultiMap());
     assertEquals("0", respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
-  @Test
+  
   public void testResetContentRemovesTransferEncodingHeader() throws Exception {
     MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 205, MultiMap.caseInsensitiveMultiMap().set("transfer-encoding", "chunked"));
     assertEquals("0", respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
-  @Test
+  
   public void testNotModifiedDoesNotSetAutomaticallySetContentLengthHeader() throws Exception {
     MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 304, MultiMap.caseInsensitiveMultiMap());
     assertNull(respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
-  @Test
+  
   public void testNotModifiedAllowsContentLengthHeader() throws Exception {
     MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 304, MultiMap.caseInsensitiveMultiMap().set("content-length", "34"));
     assertEquals("34", respHeaders.get("Content-Length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
-  @Test
+  
   public void testNotModifiedRemovesTransferEncodingHeader() throws Exception {
     MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 304, MultiMap.caseInsensitiveMultiMap().set("transfer-encoding", "chunked"));
     assertNull(respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
-  @Test
+  
   public void test1xxRemovesContentLengthHeader() throws Exception {
     MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 102, MultiMap.caseInsensitiveMultiMap().set("content-length", "34"));
     assertNull(respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
-  @Test
+  
   public void test1xxRemovesTransferEncodingHeader() throws Exception {
     MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 102, MultiMap.caseInsensitiveMultiMap().set("transfer-encoding", "chunked"));
     assertNull(respHeaders.get("content-length"));
@@ -2464,7 +2464,7 @@ public abstract class HttpTest extends HttpTestBase {
     }
   }
 
-  @Test
+  
   public void testHeadHasNoContentLengthByDefault() {
     server.requestHandler(req -> {
       assertEquals(HttpMethod.HEAD, req.method());
@@ -2482,7 +2482,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testHeadButCanSetContentLength() {
     server.requestHandler(req -> {
       assertEquals(HttpMethod.HEAD, req.method());
@@ -2501,7 +2501,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testRemoteAddress() {
     server.requestHandler(req -> {
       assertEquals("127.0.0.1", req.remoteAddress().host());
@@ -2515,7 +2515,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testGetAbsoluteURI() {
     server.requestHandler(req -> {
       assertEquals(req.scheme() + "://localhost:" + DEFAULT_HTTP_PORT + "/foo/bar", req.absoluteURI());
@@ -2529,7 +2529,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testListenInvalidPort() throws Exception {
     /* Port 7 is free for use by any application in Windows, so this test fails. */
     Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
@@ -2539,7 +2539,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testListenInvalidHost() {
     server.close();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost("iqwjdoqiwjdoiqwdiojwd"));
@@ -2547,7 +2547,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.listen(onFailure(s -> testComplete()));
   }
 
-  @Test
+  
   public void testPauseResumeClientResponseWontCallEndHandlePrematurely() throws Exception {
     Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(8192));
     server.requestHandler(req -> {
@@ -2566,7 +2566,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testPauseClientResponse() {
     int numWrites = 10;
     int numBytes = 100;
@@ -2610,12 +2610,12 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testDeliverPausedBufferWhenResume() throws Exception {
     testDeliverPausedBufferWhenResume(block -> vertx.setTimer(10, id -> block.run()));
   }
 
-  @Test
+  
   public void testDeliverPausedBufferWhenResumeOnOtherThread() throws Exception {
     ExecutorService exec = Executors.newSingleThreadExecutor();
     try {
@@ -2673,7 +2673,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testClearPausedBuffersWhenResponseEnds() throws Exception {
     Buffer data = TestUtils.randomBuffer(20);
     int num = 10;
@@ -2699,7 +2699,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testPausedHttpServerRequest() throws Exception {
     CompletableFuture<Void> resumeCF = new CompletableFuture<>();
     Buffer expected = Buffer.buffer();
@@ -2737,7 +2737,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testHttpServerRequestPausedDuringLastChunk() throws Exception {
     server.requestHandler(req -> {
       AtomicBoolean ended = new AtomicBoolean();
@@ -2767,7 +2767,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testHttpClientResponsePausedDuringLastChunk() throws Exception {
     server.requestHandler(req -> {
       req.response().end("small");
@@ -2797,82 +2797,82 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testFormUploadEmptyFile() throws Exception {
     testFormUploadFile("", false, false);
   }
 
-  @Test
+  
   public void testFormUploadSmallFile() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(100), false, false);
   }
 
-  @Test
+  
   public void testFormUploadMediumFile() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(20000), false, false);
   }
 
-  @Test
+  
   public void testFormUploadLargeFile() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), false, false);
   }
 
-  @Test
+  
   public void testFormUploadEmptyFileStreamToDisk() throws Exception {
     testFormUploadFile("", true, false);
   }
 
-  @Test
+  
   public void testFormUploadSmallFileStreamToDisk() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(100), true, false);
   }
 
-  @Test
+  
   public void testFormUploadMediumFileStreamToDisk() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, false);
   }
 
-  @Test
+  
   public void testFormUploadLargeFileStreamToDisk() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, false);
   }
 
-  @Test
+  
   public void testBrokenFormUploadEmptyFile() throws Exception {
     testFormUploadFile("", true, true);
   }
 
-  @Test
+  
   public void testBrokenFormUploadSmallFile() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(100), true, true);
   }
 
-  @Test
+  
   public void testBrokenFormUploadMediumFile() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, true);
   }
 
-  @Test
+  
   public void testBrokenFormUploadLargeFile() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, true);
   }
 
-  @Test
+  
   public void testBrokenFormUploadEmptyFileStreamToDisk() throws Exception {
     testFormUploadFile("", true, true);
   }
 
-  @Test
+  
   public void testBrokenFormUploadSmallFileStreamToDisk() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(100), true, true);
   }
 
-  @Test
+  
   public void testBrokenFormUploadMediumFileStreamToDisk() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, true);
   }
 
-  @Test
+  
   public void testBrokenFormUploadLargeFileStreamToDisk() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, true);
   }
@@ -2991,7 +2991,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testFormUploadAttributes() throws Exception {
     AtomicInteger attributeCount = new AtomicInteger();
     server.requestHandler(req -> {
@@ -3039,7 +3039,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testFormUploadAttributes2() throws Exception {
     AtomicInteger attributeCount = new AtomicInteger();
     server.requestHandler(req -> {
@@ -3080,7 +3080,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testHostHeaderOverridePossible() {
     server.requestHandler(req -> {
       assertEquals("localhost:4444", req.host());
@@ -3096,7 +3096,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testResponseBodyWriteFixedString() {
     String body = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
     Buffer bodyBuff = Buffer.buffer(body);
@@ -3119,7 +3119,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testResponseDataTimeout() {
     Buffer expected = TestUtils.randomBuffer(1000);
     server.requestHandler(req -> {
@@ -3145,7 +3145,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testClientMultiThreaded() throws Exception {
     int numThreads = 10;
     Thread[] threads = new Thread[numThreads];
@@ -3175,7 +3175,7 @@ public abstract class HttpTest extends HttpTestBase {
     }
   }
 
-  @Test
+  
   public void testInVerticle() throws Exception {
     testInVerticle(false);
   }
@@ -3225,7 +3225,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testUseInMultithreadedWorker() throws Exception {
     class MyVerticle extends AbstractVerticle {
       @Override
@@ -3240,7 +3240,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testMultipleServerClose() {
     this.server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     AtomicInteger times = new AtomicInteger();
@@ -3265,7 +3265,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testClearHandlersOnEnd() {
     String path = "/some/path";
     server = vertx.createHttpServer(createBaseServerOptions());
@@ -3337,7 +3337,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testSetHandlersOnEnd() throws Exception {
     String path = "/some/path";
     server.requestHandler(req -> req.response().setStatusCode(200).end());
@@ -3370,7 +3370,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testRequestEnded() {
     server.requestHandler(req -> {
       assertFalse(req.isEnded());
@@ -3416,7 +3416,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testRequestEndedNoEndHandler() {
     server.requestHandler(req -> {
       assertFalse(req.isEnded());
@@ -3462,7 +3462,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testInMultithreadedWorker() throws Exception {
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
@@ -3488,7 +3488,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testAbsoluteURIServer() {
     server.close();
     // Listen on all addresses
@@ -3511,7 +3511,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testDumpManyRequestsOnQueue() throws Exception {
     int sendRequests = 10000;
     AtomicInteger receivedRequests = new AtomicInteger();
@@ -3531,7 +3531,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testOtherMethodWithRawMethod() throws Exception {
     try {
       client.request(HttpMethod.OTHER, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
@@ -3541,7 +3541,7 @@ public abstract class HttpTest extends HttpTestBase {
     }
   }
 
-  @Test
+  
   public void testOtherMethodRequest() throws Exception {
     server.requestHandler(r -> {
       assertEquals(HttpMethod.OTHER, r.method());
@@ -3555,17 +3555,17 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testClientLocalConnectionHandler() throws Exception {
     testClientConnectionHandler(true, false);
   }
 
-  @Test
+  
   public void testClientGlobalConnectionHandler() throws Exception {
     testClientConnectionHandler(false, true);
   }
 
-  @Test
+  
   public void testClientConnectionHandler() throws Exception {
     testClientConnectionHandler(true, true);
   }
@@ -3593,7 +3593,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testServerConnectionHandler() throws Exception {
     AtomicInteger status = new AtomicInteger();
     AtomicReference<HttpConnection> connRef = new AtomicReference<>();
@@ -3615,7 +3615,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testClientConnectionClose() throws Exception {
     // Test client connection close + server close handler
     CountDownLatch latch = new CountDownLatch(1);
@@ -3643,7 +3643,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testServerConnectionClose() throws Exception {
     // Test server connection close + client close handler
     server.requestHandler(req -> {
@@ -3664,13 +3664,13 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testNoLogging() throws Exception {
     TestLoggerFactory factory = testLogging();
     assertFalse(factory.hasName("io.netty.handler.codec.http2.Http2FrameLogger"));
   }
 
-  @Test
+  
   public void testServerLogging() throws Exception {
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setLogActivity(true));
@@ -3682,7 +3682,7 @@ public abstract class HttpTest extends HttpTestBase {
     }
   }
 
-  @Test
+  
   public void testClientLogging() throws Exception {
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setLogActivity(true));
@@ -3694,7 +3694,7 @@ public abstract class HttpTest extends HttpTestBase {
     }
   }
 
-  @Test
+  
   public void testClientLocalAddress() throws Exception {
     String expectedAddress = TestUtils.loopbackAddress();
     client.close();
@@ -3711,72 +3711,72 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testFollowRedirectGetOn301() throws Exception {
     testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
   }
 
-  @Test
+  
   public void testFollowRedirectPostOn301() throws Exception {
     testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 301, 301, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
 
-  @Test
+  
   public void testFollowRedirectPutOn301() throws Exception {
     testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 301, 301, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
 
-  @Test
+  
   public void testFollowRedirectGetOn302() throws Exception {
     testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 302, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
   }
 
-  @Test
+  
   public void testFollowRedirectPostOn302() throws Exception {
     testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 302, 302, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
 
-  @Test
+  
   public void testFollowRedirectPutOn302() throws Exception {
     testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 302, 302, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
 
-  @Test
+  
   public void testFollowRedirectGetOn303() throws Exception {
     testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 303, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
   }
 
-  @Test
+  
   public void testFollowRedirectPostOn303() throws Exception {
     testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 303, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
   }
 
-  @Test
+  
   public void testFollowRedirectPutOn303() throws Exception {
     testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 303, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
   }
 
-  @Test
+  
   public void testFollowRedirectNotOn304() throws Exception {
     testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 304, 304, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
 
-  @Test
+  
   public void testFollowRedirectGetOn307() throws Exception {
     testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 307, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
   }
 
-  @Test
+  
   public void testFollowRedirectPostOn307() throws Exception {
     testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 307, 307, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
 
-  @Test
+  
   public void testFollowRedirectPutOn307() throws Exception {
     testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 307, 307, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
 
-  @Test
+  
   public void testFollowRedirectWithRelativeLocation() throws Exception {
     testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "/another", "http://localhost:8080/another");
   }
@@ -3830,12 +3830,12 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testFollowRedirectWithBody() throws Exception {
     testFollowRedirectWithBody(Function.identity());
   }
 
-  @Test
+  
   public void testFollowRedirectWithPaddedBody() throws Exception {
     testFollowRedirectWithBody(buff -> TestUtils.leftPad(1, buff));
   }
@@ -3864,7 +3864,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testFollowRedirectWithChunkedBody() throws Exception {
     Buffer buff1 = Buffer.buffer(TestUtils.randomAlphaString(2048));
     Buffer buff2 = Buffer.buffer(TestUtils.randomAlphaString(2048));
@@ -3900,12 +3900,12 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testFollowRedirectWithRequestNotEnded() throws Exception {
     testFollowRedirectWithRequestNotEnded(false);
   }
 
-  @Test
+  
   public void testFollowRedirectWithRequestNotEndedFailing() throws Exception {
     testFollowRedirectWithRequestNotEnded(true);
   }
@@ -3970,7 +3970,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testFollowRedirectSendHeadThenBody() throws Exception {
     Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(2048));
     AtomicBoolean redirected = new AtomicBoolean();
@@ -3999,7 +3999,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testFollowRedirectLimit() throws Exception {
     AtomicInteger redirects = new AtomicInteger();
     server.requestHandler(req -> {
@@ -4021,7 +4021,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testFollowRedirectPropagatesTimeout() throws Exception {
     AtomicInteger redirections = new AtomicInteger();
     server.requestHandler(req -> {
@@ -4047,7 +4047,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testFollowRedirectHost() throws Exception {
     String scheme = createBaseClientOptions().isSsl() ? "https" : "http";
     waitFor(2);
@@ -4075,7 +4075,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testFollowRedirectWithCustomHandler() throws Exception {
     String scheme = createBaseClientOptions().isSsl() ? "https" : "http";
     waitFor(2);
@@ -4113,7 +4113,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testDefaultRedirectHandler() throws Exception {
     testFoo("http://example.com", "http://example.com");
     testFoo("http://example.com/somepath", "http://example.com/somepath");
@@ -4212,7 +4212,7 @@ public abstract class HttpTest extends HttpTestBase {
     }
   }
 
-  @Test
+  
   public void testFollowRedirectEncodedParams() throws Exception {
     String value1 = "\ud55c\uae00", value2 = "A B+C", value3 = "123 \u20ac";
     server.requestHandler(req -> {
@@ -4252,7 +4252,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testServerResponseCloseHandlerNotHoldingLock() throws Exception {
     waitFor(7);
     server.requestHandler(req -> {
@@ -4298,7 +4298,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testCloseHandlerWhenConnectionEnds() throws Exception {
     server.requestHandler(req -> {
       req.response().closeHandler(v -> {
@@ -4315,7 +4315,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testCloseHandlerWhenConnectionClose() throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
@@ -4334,7 +4334,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public abstract void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd() throws Exception;
 
   protected void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(int expected) throws Exception {
@@ -4380,7 +4380,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
   }
 
-  @Test
+  
   public void testClientDecompressionError() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
@@ -4414,7 +4414,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   }
 
-  @Test
+  
   public void testContainsValueString() {
     server.requestHandler(req -> {
       assertTrue(req.headers().contains("Foo", "foo", false));
@@ -4434,7 +4434,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testContainsValueStringIgnoreCase() {
     server.requestHandler(req -> {
       assertTrue(req.headers().contains("Foo", "foo", true));
@@ -4454,7 +4454,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testContainsValueCharSequence() {
     CharSequence Foo = HttpHeaders.createOptimized("Foo");
     CharSequence foo = HttpHeaders.createOptimized("foo");
@@ -4482,7 +4482,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testContainsValueCharSequenceIgnoreCase() {
     CharSequence Foo = HttpHeaders.createOptimized("Foo");
     CharSequence foo = HttpHeaders.createOptimized("foo");
@@ -4510,7 +4510,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testBytesReadRequest() throws Exception {
     int length = 2048;
     Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(length));;
@@ -4532,7 +4532,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testClientSynchronousConnectFailures() {
     System.setProperty("vertx.disableDnsResolver", "true");
     Vertx vertx = Vertx.vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setQueryTimeout(100)));
@@ -4561,7 +4561,7 @@ public abstract class HttpTest extends HttpTestBase {
     }
   }
 
-  @Test
+  
   public void testClientConnectInvalidPort() {
     client.get(-1, "localhost", "/someuri", resp -> {
       fail();
@@ -4617,7 +4617,7 @@ public abstract class HttpTest extends HttpTestBase {
     return headers;
   }
 
-  @Test
+  
   public void testHttpClientRequestHeadersDontContainCROrLF() throws Exception {
     server.requestHandler(req -> {
       req.headers().forEach(header -> {
@@ -4654,7 +4654,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testHttpServerResponseHeadersDontContainCROrLF() throws Exception {
     server.requestHandler(req -> {
       List<BiConsumer<String, String>> list = Arrays.asList(
@@ -4689,7 +4689,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testDisableIdleTimeoutInPool() throws Exception {
     server.requestHandler(req -> {
       req.response().end();
@@ -4716,7 +4716,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testHttpConnect() {
     Buffer buffer = TestUtils.randomBuffer(128);
     Buffer received = Buffer.buffer();
@@ -4768,12 +4768,12 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testAccessNetSocketPendingResponseDataPaused() {
     testAccessNetSocketPendingResponseData(true);
   }
 
-  @Test
+  
   public void testAccessNetSocketPendingResponseDataNotPaused() {
     testAccessNetSocketPendingResponseData(false);
   }
@@ -4806,7 +4806,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testHttpInvalidConnectResponseEnded() {
     waitFor(2);
     server.requestHandler(req -> {
@@ -4828,7 +4828,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
+  
   public void testHttpInvalidConnectResponseChunked() {
     waitFor(2);
     server.requestHandler(req -> {
@@ -4851,7 +4851,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   /*
-  @Test
+  
   public void testReset() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {

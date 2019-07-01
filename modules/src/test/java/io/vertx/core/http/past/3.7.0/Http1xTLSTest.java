@@ -20,7 +20,7 @@ import org.junit.Test;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.7.0"})
 public class Http1xTLSTest extends HttpTLSTest {
 
   @Override
@@ -36,7 +36,6 @@ public class Http1xTLSTest extends HttpTLSTest {
 
   // ALPN tests
 
-  @Test
   // Client and server uses ALPN
   public void testAlpn() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).serverUsesAlpn().clientUsesAlpn().pass();
@@ -133,7 +132,7 @@ public class Http1xTLSTest extends HttpTLSTest {
       req.response().setStatusCode(303).putHeader("location", "http://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI).end();
     });
     startServer(redirectServer);
-    RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setURI(DEFAULT_TEST_URI).setPort(4043).setSsl(false);
+    RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setURI(DEFAULT_TEST_URI).setPort(4043);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.NONE, Trust.NONE)
         .clientSSL(true)
         .serverSSL(false)

@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.7.0"})
 @RunWith(Parameterized.class)
 public class Http2MetricsTest extends HttpMetricsTestBase {
 
@@ -69,6 +69,8 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
   }
 
   @Test
+  public void defaultTest() {}
+
   public void testPushPromise() throws Exception {
     waitFor(2);
     int numBuffers = 10;

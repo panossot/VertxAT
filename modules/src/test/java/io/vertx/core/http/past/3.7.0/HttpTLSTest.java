@@ -43,7 +43,7 @@ import java.util.function.Function;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.7.0"})
 public abstract class HttpTLSTest extends HttpTestBase {
 
   @Rule
@@ -656,7 +656,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
     assertEquals("host5.com", TestUtils.cnOf(cert));
   }
 
-
   public void testSNIWithALPN() throws Exception {
     X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
@@ -678,7 +677,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
         .clientPeerCert();
     assertEquals("host2.com", TestUtils.cnOf(cert));
   }
-
 
   public void testSNIWithOpenSSL() throws Exception {
     X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
@@ -1187,6 +1185,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         });
         req.exceptionHandler(t -> {
           if (shouldPass) {
+            t.printStackTrace();
             HttpTLSTest.this.fail("Should not throw exception");
           } else {
             complete();

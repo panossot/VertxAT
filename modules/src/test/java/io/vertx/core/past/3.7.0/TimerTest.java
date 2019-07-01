@@ -11,6 +11,11 @@
 
 package io.vertx.core;
 
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
+import io.vertx.core.TimeoutStream;
+import io.vertx.core.Vertx;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -18,30 +23,29 @@ import org.junit.Test;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.7.0"})
 public class TimerTest extends VertxTestBase {
 
   @Test
-  public void testTimer() {
+  public void testTimer() throws Exception {
     timer(1);
   }
 
   @Test
-  public void testPeriodic() {
+  public void testPeriodic() throws Exception {
     periodic(10);
   }
 
+  @Test
   /**
    * Test the timers fire with approximately the correct delay
    */
-  @Test
-  public void testTimings() {
+  public void testTimings() throws Exception {
     final long start = System.currentTimeMillis();
     final long delay = 2000;
     vertx.setTimer(delay, timerID -> {
@@ -56,7 +60,7 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testInVerticle() {
+  public void testInVerticle() throws Exception {
     class MyVerticle extends AbstractVerticle {
       AtomicInteger cnt = new AtomicInteger();
       @Override
@@ -81,7 +85,7 @@ public class TimerTest extends VertxTestBase {
     await();
   }
 
-  private void periodic(long delay) {
+  private void periodic(long delay) throws Exception {
     final int numFires = 10;
     final AtomicLong id = new AtomicLong(-1);
     id.set(vertx.setPeriodic(delay, new Handler<Long>() {
@@ -102,7 +106,7 @@ public class TimerTest extends VertxTestBase {
     await();
   }
 
-  private void timer(long delay) {
+  private void timer(long delay) throws Exception {
     final AtomicLong id = new AtomicLong(-1);
     id.set(vertx.setTimer(delay, new Handler<Long>() {
       int count;
@@ -126,7 +130,7 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testTimerStreamSetHandlerSchedulesTheTimer() {
+  public void testTimerStreamSetHandlerSchedulesTheTimer() throws Exception {
     vertx.runOnContext(v -> {
       ReadStream<Long> timer = vertx.timerStream(200);
       AtomicBoolean handled = new AtomicBoolean();
@@ -143,7 +147,7 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testTimerStreamExceptionDuringHandle() {
+  public void testTimerStreamExceptionDuringHandle() throws Exception {
     vertx.runOnContext(v -> {
       ReadStream<Long> timer = vertx.timerStream(200);
       AtomicBoolean handled = new AtomicBoolean();
@@ -161,7 +165,7 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testTimerStreamCallingWithNullHandlerCancelsTheTimer() {
+  public void testTimerStreamCallingWithNullHandlerCancelsTheTimer() throws Exception {
     vertx.runOnContext(v -> {
       ReadStream<Long> timer = vertx.timerStream(200);
       AtomicInteger count = new AtomicInteger();
@@ -181,7 +185,7 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testTimerStreamCancellation() {
+  public void testTimerStreamCancellation() throws Exception {
     vertx.runOnContext(v -> {
       TimeoutStream timer = vertx.timerStream(200);
       AtomicBoolean called = new AtomicBoolean();
@@ -198,7 +202,7 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testTimerSetHandlerTwice() {
+  public void testTimerSetHandlerTwice() throws Exception {
     vertx.runOnContext(v -> {
       ReadStream<Long> timer = vertx.timerStream(200);
       timer.handler(l -> testComplete());
@@ -212,7 +216,7 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testTimerPauseResume() {
+  public void testTimerPauseResume() throws Exception {
     ReadStream<Long> timer = vertx.timerStream(10);
     timer.handler(l -> testComplete());
     timer.pause();
@@ -221,7 +225,7 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testTimerPause() {
+  public void testTimerPause() throws Exception {
     vertx.runOnContext(v -> {
       ReadStream<Long> timer = vertx.timerStream(10);
       timer.handler(l -> fail());
@@ -232,7 +236,7 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testPeriodicStreamHandler() {
+  public void testPeriodicStreamHandler() throws Exception {
     TimeoutStream timer = vertx.periodicStream(10);
     AtomicInteger count = new AtomicInteger();
     timer.handler(l -> {
@@ -257,7 +261,7 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testPeriodicSetHandlerTwice() {
+  public void testPeriodicSetHandlerTwice() throws Exception {
     vertx.runOnContext(v -> {
       ReadStream<Long> timer = vertx.periodicStream(200);
       timer.handler(l -> testComplete());
@@ -271,7 +275,7 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testPeriodicPauseResume() {
+  public void testPeriodicPauseResume() throws Exception {
     ReadStream<Long> timer = vertx.periodicStream(200);
     AtomicInteger count = new AtomicInteger();
     timer.handler(id -> {
@@ -305,7 +309,7 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testCancelTimerWhenScheduledOnWorker() {
+  public void testCancelTimerWhenScheduledOnWorker() throws Exception {
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
@@ -317,77 +321,6 @@ public class TimerTest extends VertxTestBase {
         testComplete();
       }
     }, new DeploymentOptions().setWorker(true));
-    await();
-  }
-
-  @Test
-  public void testWorkerTimer() {
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start() throws Exception {
-        vertx.setTimer(10, id -> {
-          assertTrue(Context.isOnWorkerThread());
-          testComplete();
-        });
-      }
-    }, new DeploymentOptions().setWorker(true));
-    await();
-  }
-
-  @Test
-  public void testFailInTimer() {
-    RuntimeException failure = new RuntimeException();
-    Context ctx = vertx.getOrCreateContext();
-    ctx.runOnContext(v -> {
-      ctx.exceptionHandler(err -> {
-        assertSame(err, failure);
-        testComplete();
-      });
-      vertx.setTimer(5, id -> {
-        throw failure;
-      });
-    });
-    await();
-  }
-
-  @Test
-  public void testCancellationRace() throws Exception {
-    for (int i = 0;i < 200;i++) {
-      AtomicBoolean fired = new AtomicBoolean();
-      long timerId = vertx.setTimer(5, id -> {
-        fired.set(true);
-      });
-      Thread.sleep(5);
-      boolean res = vertx.cancelTimer(timerId);
-      if (res && fired.get()) {
-        throw new AssertionError("It failed " + i);
-      }
-    }
-  }
-
-  @Test
-  public void testUndeployCancelTimer() {
-    testUndeployCancellation(() -> vertx.setTimer(1000, id -> {}));
-  }
-
-  @Test
-  public void testUndeployCancelPeriodic() {
-    testUndeployCancellation(() -> vertx.setPeriodic(1000, id -> {}));
-  }
-
-  private void testUndeployCancellation(Supplier<Long> f) {
-    AtomicLong timer = new AtomicLong();
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start() {
-        timer.set(f.get());
-      }
-    }, onSuccess(deployment -> {
-      vertx.undeploy(deployment, v -> {
-        assertFalse(vertx.cancelTimer(timer.get()));
-        testComplete();
-      });
-    }));
     await();
   }
 }

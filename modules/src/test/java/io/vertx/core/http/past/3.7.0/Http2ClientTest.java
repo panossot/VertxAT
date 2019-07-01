@@ -75,7 +75,7 @@ import static io.vertx.test.core.TestUtils.*;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.7.0"})
 public class Http2ClientTest extends Http2TestBase {
 
   private List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
@@ -259,7 +259,6 @@ public class Http2ClientTest extends Http2TestBase {
       assertEquals(2, req.headers().getAll("juu_request").size());
       assertEquals("juu_request_value_1", req.headers().getAll("juu_request").get(0));
       assertEquals("juu_request_value_2", req.headers().getAll("juu_request").get(1));
-      assertEquals(new HashSet<>(Arrays.asList("foo_request", "bar_request", "juu_request")), new HashSet<>(req.headers().names()));
       reqCount.incrementAndGet();
       HttpServerResponse resp = req.response();
       resp.putHeader("content-type", "text/plain");
@@ -269,27 +268,28 @@ public class Http2ClientTest extends Http2TestBase {
       resp.end();
     });
     startServer();
-    client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath",
-      resp -> {
-        Context ctx = vertx.getOrCreateContext();
+    HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath");
+    req.handler(resp -> {
+      Context ctx = vertx.getOrCreateContext();
+      assertOnIOContext(ctx);
+      assertEquals(1, req.streamId());
+      assertEquals(1, reqCount.get());
+      assertEquals(HttpVersion.HTTP_2, resp.version());
+      assertEquals(200, resp.statusCode());
+      assertEquals("OK", resp.statusMessage());
+      assertEquals("text/plain", resp.getHeader("content-type"));
+      assertEquals("200", resp.getHeader(":status"));
+      assertEquals("foo_value", resp.getHeader("foo_response"));
+      assertEquals("bar_value", resp.getHeader("bar_response"));
+      assertEquals(2, resp.headers().getAll("juu_response").size());
+      assertEquals("juu_value_1", resp.headers().getAll("juu_response").get(0));
+      assertEquals("juu_value_2", resp.headers().getAll("juu_response").get(1));
+      resp.endHandler(v -> {
         assertOnIOContext(ctx);
-        assertEquals(1, resp.request().streamId());
-        assertEquals(1, reqCount.get());
-        assertEquals(HttpVersion.HTTP_2, resp.version());
-        assertEquals(200, resp.statusCode());
-        assertEquals("OK", resp.statusMessage());
-        assertEquals("text/plain", resp.getHeader("content-type"));
-        assertEquals("foo_value", resp.getHeader("foo_response"));
-        assertEquals("bar_value", resp.getHeader("bar_response"));
-        assertEquals(2, resp.headers().getAll("juu_response").size());
-        assertEquals("juu_value_1", resp.headers().getAll("juu_response").get(0));
-        assertEquals("juu_value_2", resp.headers().getAll("juu_response").get(1));
-        assertEquals(new HashSet<>(Arrays.asList("content-type", "content-length", "foo_response", "bar_response", "juu_response")), new HashSet<>(resp.headers().names()));
-        resp.endHandler(v -> {
-          assertOnIOContext(ctx);
-          testComplete();
-        });
-      }).putHeader("Foo_request", "foo_request_value")
+        testComplete();
+      });
+    })
+        .putHeader("Foo_request", "foo_request_value")
         .putHeader("bar_request", "bar_request_value")
         .putHeader("juu_request", Arrays.<CharSequence>asList("juu_request_value_1", "juu_request_value_2"))
         .exceptionHandler(err -> fail())

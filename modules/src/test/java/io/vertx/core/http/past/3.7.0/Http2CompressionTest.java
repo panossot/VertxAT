@@ -22,7 +22,7 @@ import org.junit.Test;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.7.0"})
 public class Http2CompressionTest extends Http2TestBase {
 
     private static final String COMPRESS_TEST_STRING = "/*\n"
@@ -62,7 +62,6 @@ public class Http2CompressionTest extends Http2TestBase {
                         .setCompressionLevel(9));
     }
 
-    @Test
     public void testDefaultRequestHeaders() {
         Handler<HttpServerRequest> requestHandler = req -> {
             //    assertEquals(2, req.headers().size());

@@ -55,7 +55,7 @@ public class Http2Test extends HttpTest {
     return Http2TestBase.createHttp2ClientOptions();
   }
 
-  @Test
+  
   @Override
   public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd() throws Exception {
     testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(1);
@@ -63,7 +63,7 @@ public class Http2Test extends HttpTest {
 
   // Extra test
 
-  @Test
+  
   public void testServerResponseWriteBufferFromOtherThread() throws Exception {
     server.requestHandler(req -> {
       runAsync(() -> {
@@ -81,7 +81,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testServerResponseResetFromOtherThread() throws Exception {
     server.requestHandler(req -> {
       runAsync(() -> {
@@ -108,7 +108,7 @@ public class Http2Test extends HttpTest {
     }).start();
   }
 
-  @Test
+  
   public void testClientRequestWriteFromOtherThread() throws Exception {
     CountDownLatch latch1 = new CountDownLatch(1);
     CountDownLatch latch2 = new CountDownLatch(1);
@@ -130,7 +130,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testServerOpenSSL() throws Exception {
     HttpServerOptions opts = new HttpServerOptions()
         .setPort(DEFAULT_HTTPS_PORT)
@@ -162,7 +162,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testServerStreamPausedWhenConnectionIsPaused() throws Exception {
     CountDownLatch fullLatch = new CountDownLatch(1);
     CompletableFuture<Void> resumeLatch = new CompletableFuture<>();
@@ -213,7 +213,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testClientStreamPausedWhenConnectionIsPaused() throws Exception {
     waitFor(2);
     Buffer buffer = TestUtils.randomBuffer(512);
@@ -262,7 +262,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testResetClientRequestNotYetSent() throws Exception {
     waitFor(2);
     server.close();
@@ -290,7 +290,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testDiscardConnectionWhenChannelBecomesInactive() throws Exception {
     AtomicInteger count = new AtomicInteger();
     server.requestHandler(req -> {
@@ -316,7 +316,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testClientDoesNotSupportAlpn() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
@@ -334,7 +334,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testServerDoesNotSupportAlpn() throws Exception {
     waitFor(2);
     server.close();
@@ -352,7 +352,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testClientMakeRequestHttp2WithSSLWithoutAlpn() throws Exception {
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setUseAlpn(false));
@@ -364,7 +364,7 @@ public class Http2Test extends HttpTest {
     }
   }
 
-  @Test
+  
   public void testServePendingRequests() throws Exception {
     int n = 10;
     waitFor(n);
@@ -387,7 +387,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testInitialMaxConcurrentStreamZero() throws Exception {
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
@@ -408,7 +408,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testFoo() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
@@ -429,7 +429,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testKeepAliveTimeout() throws Exception {
     server.requestHandler(req -> {
       req.response().end();
@@ -452,7 +452,7 @@ public class Http2Test extends HttpTest {
     await();
   }
   
-  @Test
+  
   public void testStreamWeightAndDependency() throws Exception {
     int requestStreamDependency = 56;
     short requestStreamWeight = 43;
@@ -484,7 +484,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testStreamWeightAndDependencyChange() throws Exception {
     int requestStreamDependency = 56;
     short requestStreamWeight = 43;
@@ -546,7 +546,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testStreamWeightAndDependencyNoChange() throws Exception {
     int requestStreamDependency = 56;
     short requestStreamWeight = 43;
@@ -598,7 +598,7 @@ public class Http2Test extends HttpTest {
   }
 
 
-  @Test
+  
   public void testStreamWeightAndDependencyInheritance() throws Exception {
     int requestStreamDependency = 86;
     short requestStreamWeight = 53;
@@ -624,7 +624,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testDefaultStreamWeightAndDependency() throws Exception {
     int defaultStreamDependency = 0;
     short defaultStreamWeight = Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT;
@@ -646,7 +646,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testStreamWeightAndDependencyPushPromise() throws Exception {
     int pushStreamDependency = 456;
     short pushStreamWeight = 14;
@@ -681,7 +681,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Test
+  
   public void testStreamWeightAndDependencyInheritancePushPromise() throws Exception {
     int reqStreamDependency = 556;
     short reqStreamWeight = 84;
