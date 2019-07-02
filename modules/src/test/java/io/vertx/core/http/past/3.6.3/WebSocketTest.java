@@ -61,7 +61,6 @@ import java.util.function.Function;
 
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_HOST;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_PORT;
-import static io.vertx.core.http.HttpTestBase.DEFAULT_TEST_URI;
 import static io.vertx.test.core.TestUtils.*;
 
 /**
@@ -69,7 +68,7 @@ import static io.vertx.test.core.TestUtils.*;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0**3.7.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.6.9"})
 public class WebSocketTest extends VertxTestBase {
 
   private HttpClient client;
@@ -1206,29 +1205,18 @@ public class WebSocketTest extends VertxTestBase {
                                     boolean expectEvent,
                                     boolean upgradeRequest,
                                     int expectedStatus) {
-    client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
     if (upgradeRequest) {
-      server = vertx.createHttpServer()
-        .websocketHandler(ws -> {
-          // Check we can get notified
-          // handshake fails after this method returns and does not reject the ws
-          assertTrue(expectEvent);
-        })
-        .requestHandler(req -> {
-          req.response().end();
-        });
+      server = vertx.createHttpServer().websocketHandler(ws -> {
+        // Check we can get notified
+        // handshake fails after this method returns and does not reject the ws
+        assertTrue(expectEvent);
+      });
     } else {
-      AtomicBoolean first = new AtomicBoolean();
       server = vertx.createHttpServer().requestHandler(req -> {
-        if (first.compareAndSet(false, true)) {
-          try {
-            req.upgrade();
-          } catch (Exception e) {
-            // Expected
-          }
-        } else {
-          req.response().end();
+        try {
+          req.upgrade();
+        } catch (Exception e) {
+          // Expected
         }
       });
     }
@@ -1236,12 +1224,7 @@ public class WebSocketTest extends VertxTestBase {
       HttpClientRequest req = requestProvider.apply(resp -> {
         assertEquals(expectedStatus, resp.statusCode());
         resp.endHandler(v1 -> {
-          // Make another request to check the connection remains usable
-          client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp2 -> {
-            resp2.endHandler(v2 -> {
-              testComplete();
-            });
-          });
+          testComplete();
         });
       });
       req.end();
@@ -1271,73 +1254,6 @@ public class WebSocketTest extends VertxTestBase {
           }).
           handler(ws -> fail("Should not be called"));
     });
-    await();
-  }
-
-  @Test
-  public void testAsyncAccept() {
-    AtomicBoolean resolved = new AtomicBoolean();
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
-      Future<Integer> fut = Future.future();
-      ws.setHandshake(fut);
-      try {
-        ws.accept();
-        fail();
-      } catch (IllegalStateException ignore) {
-        // Expected
-      }
-      try {
-        ws.writeTextMessage("hello");
-        fail();
-      } catch (IllegalStateException ignore) {
-        // Expected
-      }
-      vertx.setTimer(500, id -> {
-        resolved.set(true);
-        fut.complete(101);
-      });
-    });
-    server.listen(onSuccess(s -> {
-      client.websocketStream(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", null).
-        handler(ws -> {
-          assertTrue(resolved.get());
-          testComplete();
-        });
-    }));
-    await();
-  }
-
-  @Test
-  public void testCloseAsyncPending() {
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
-      Future<Integer> fut = Future.future();
-      ws.setHandshake(fut);
-      ws.close();
-      assertTrue(fut.isComplete());
-      assertEquals(101, (int)fut.result());
-    });
-    server.listen(onSuccess(s -> {
-      client.websocketStream(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", null).
-        handler(ws -> {
-          ws.closeHandler(v -> {
-            testComplete();
-          });
-        });
-    }));
-    await();
-  }
-
-  @Test
-  public void testClose() throws Exception {
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(WebSocketBase::close);
-    server.listen(onSuccess(s -> {
-      client.websocketStream(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", null).
-        handler(ws -> {
-          ws.closeHandler(v -> {
-            testComplete();
-          });
-        });
-    }));
     await();
   }
 
@@ -2781,74 +2697,4 @@ public class WebSocketTest extends VertxTestBase {
     }).exceptionHandler(this::fail).end();
     await();
   }
-
-  @Test
-  public void testPausedDuringLastChunk() {
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
-      .websocketHandler(ws -> {
-        AtomicBoolean paused = new AtomicBoolean(true);
-        ws.pause();
-        ws.closeHandler(v -> {
-          paused.set(false);
-          ws.resume();
-        });
-        ws.endHandler(v -> {
-          assertFalse(paused.get());
-          testComplete();
-        });
-      })
-      .listen(onSuccess(v -> {
-        client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", ws -> {
-          ws.close();
-        });
-      }));
-    await();
-  }
-
-  @Test
-  public void testDrainServerWebSocket() {
-    Future<Void> resume = Future.future();
-    server = vertx.createHttpServer()
-      .websocketHandler(ws -> {
-        while (!ws.writeQueueFull()) {
-          ws.writeFrame(WebSocketFrame.textFrame(randomAlphaString(512), true));
-        }
-        ws.drainHandler(v -> {
-          testComplete();
-        });
-        resume.complete();
-      }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
-        client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", ws -> {
-          ws.pause();
-          resume.setHandler(onSuccess(v2 -> {
-            ws.resume();
-          }));
-        });
-      }));
-    await();
-  }
-
-  @Test
-  public void testDrainClientWebSocket() {
-    Future<Void> resume = Future.future();
-    server = vertx.createHttpServer()
-      .websocketHandler(ws -> {
-        ws.pause();
-        resume.setHandler(onSuccess(v2 -> {
-          ws.resume();
-        }));
-      }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
-        client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", ws -> {
-          while (!ws.writeQueueFull()) {
-            ws.writeFrame(WebSocketFrame.textFrame(randomAlphaString(512), true));
-          }
-          ws.drainHandler(v -> {
-            testComplete();
-          });
-          resume.complete();
-        });
-      }));
-    await();
-  }
-
 }

@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0"})
 public class PipeTest extends AsyncTestBase {
 
   private FakeStream<Object> dst;

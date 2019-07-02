@@ -20,7 +20,6 @@ import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
-import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.Pump;
@@ -52,7 +51,7 @@ import static java.util.Collections.singletonList;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0**3.7.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.6.9"})
 public abstract class HttpTest extends HttpTestBase {
 
   @Rule
@@ -2548,25 +2547,6 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   
-  public void testPauseResumeClientResponseWontCallEndHandlePrematurely() throws Exception {
-    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(8192));
-    server.requestHandler(req -> {
-      req.response().end(expected);
-    });
-    startServer();
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-      resp.bodyHandler(body -> {
-        assertEquals(expected, body);
-        testComplete();
-      });
-      // Check that pause resume won't call the end handler prematurely
-      resp.pause();
-      resp.resume();
-    });
-    await();
-  }
-
-  
   public void testPauseClientResponse() {
     int numWrites = 10;
     int numBytes = 100;
@@ -2738,23 +2718,13 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   
-  public void testHttpServerRequestPausedDuringLastChunk() throws Exception {
+  public void testPausedHttpServerRequestDuringLastChunkEndsTheRequest() throws Exception {
     server.requestHandler(req -> {
-      AtomicBoolean ended = new AtomicBoolean();
-      AtomicBoolean paused = new AtomicBoolean();
       req.handler(buff -> {
         assertEquals("small", buff.toString());
         req.pause();
-        paused.set(true);
-        vertx.setTimer(20, id -> {
-          assertFalse(ended.get());
-          paused.set(false);
-          req.resume();
-        });
       });
       req.endHandler(v -> {
-        assertFalse(paused.get());
-        ended.set(true);
         req.response().end();
       });
     });
@@ -2768,116 +2738,36 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   
-  public void testHttpClientResponsePausedDuringLastChunk() throws Exception {
-    server.requestHandler(req -> {
-      req.response().end("small");
-    });
-    startServer();
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", resp -> {
-      AtomicBoolean ended = new AtomicBoolean();
-      AtomicBoolean paused = new AtomicBoolean();
-      resp.handler(buff -> {
-        assertEquals("small", buff.toString());
-        resp.pause();
-        paused.set(true);
-        vertx.setTimer(20, id -> {
-          assertFalse(ended.get());
-          paused.set(false);
-          resp.resume();
-        });
-      });
-      resp.endHandler(v -> {
-        assertFalse(paused.get());
-        ended.set(true);
-        complete();
-      });
-    });
-    await();
-  }
-
-  
-  public void testFormUploadEmptyFile() throws Exception {
-    testFormUploadFile("", false, false);
-  }
-
-  
   public void testFormUploadSmallFile() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(100), false, false);
+    testFormUploadFile(TestUtils.randomAlphaString(100), false);
   }
 
   
   public void testFormUploadMediumFile() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(20000), false, false);
+    testFormUploadFile(TestUtils.randomAlphaString(20000), false);
   }
 
   
   public void testFormUploadLargeFile() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), false, false);
-  }
-
-  
-  public void testFormUploadEmptyFileStreamToDisk() throws Exception {
-    testFormUploadFile("", true, false);
+    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), false);
   }
 
   
   public void testFormUploadSmallFileStreamToDisk() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(100), true, false);
+    testFormUploadFile(TestUtils.randomAlphaString(100), true);
   }
 
   
   public void testFormUploadMediumFileStreamToDisk() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, false);
+    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true);
   }
 
   
   public void testFormUploadLargeFileStreamToDisk() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, false);
+    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true);
   }
 
-  
-  public void testBrokenFormUploadEmptyFile() throws Exception {
-    testFormUploadFile("", true, true);
-  }
-
-  
-  public void testBrokenFormUploadSmallFile() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(100), true, true);
-  }
-
-  
-  public void testBrokenFormUploadMediumFile() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, true);
-  }
-
-  
-  public void testBrokenFormUploadLargeFile() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, true);
-  }
-
-  
-  public void testBrokenFormUploadEmptyFileStreamToDisk() throws Exception {
-    testFormUploadFile("", true, true);
-  }
-
-  
-  public void testBrokenFormUploadSmallFileStreamToDisk() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(100), true, true);
-  }
-
-  
-  public void testBrokenFormUploadMediumFileStreamToDisk() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, true);
-  }
-
-  
-  public void testBrokenFormUploadLargeFileStreamToDisk() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, true);
-  }
-
-  private void testFormUploadFile(String contentStr, boolean streamToDisk, boolean abortClient) throws Exception {
+  private void testFormUploadFile(String contentStr, boolean streamToDisk) throws Exception {
 
     waitFor(2);
 
@@ -2909,35 +2799,16 @@ public abstract class HttpTest extends HttpTestBase {
             uploadedFileName = new File(testDir, UUID.randomUUID().toString()).getPath();
             upload.streamToFileSystem(uploadedFileName);
           }
-          AtomicInteger failures = new AtomicInteger();
-          upload.exceptionHandler(err -> failures.incrementAndGet());
           upload.endHandler(v -> {
-            if (abortClient) {
-              assertEquals(1, failures.get());
-            } else {
-              assertEquals(0, failures.get());
-              if (streamToDisk) {
-                Buffer uploaded = vertx.fileSystem().readFileBlocking(uploadedFileName);
-                assertEquals(content.length(), uploaded.length());
-                assertEquals(content, uploaded);
-              } else {
-                assertEquals(content, tot);
-              }
-              assertTrue(upload.isSizeAvailable());
-              assertEquals(content.length(), upload.size());
-            }
-            AsyncFile file = upload.file();
             if (streamToDisk) {
-              assertNotNull(file);
-              try {
-                file.flush();
-                fail("Was expecting uploaded file to be closed");
-              } catch (IllegalStateException ignore) {
-                // File has been closed
-              }
+              Buffer uploaded = vertx.fileSystem().readFileBlocking(uploadedFileName);
+              assertEquals(content.length(), uploaded.length());
+              assertEquals(content, uploaded);
             } else {
-              assertNull(file);
+              assertEquals(content, tot);
             }
+            assertTrue(upload.isSizeAvailable());
+            assertEquals(content.length(), upload.size());
             complete();
           });
         });
@@ -2950,9 +2821,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      AtomicBoolean failed = new AtomicBoolean();
       HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/form", resp -> {
-        assertFalse(abortClient);
         // assert the response
         assertEquals(200, resp.statusCode());
         resp.bodyHandler(body -> {
@@ -2960,32 +2829,22 @@ public abstract class HttpTest extends HttpTestBase {
         });
         assertEquals(0, attributeCount.get());
         complete();
-      }).exceptionHandler(err -> {
-        if (failed.compareAndSet(false, true)) {
-          assertTrue(abortClient);
-          complete();
-        }
       });
 
       String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
-      String epi = "\r\n" +
-        "--" + boundary + "--\r\n";
-      String pro = "--" + boundary + "\r\n" +
-        "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
-        "Content-Type: image/gif\r\n" +
-        "\r\n";
-      req.headers().set("content-length", "" + (pro + contentStr + epi).length());
+      Buffer buffer = Buffer.buffer();
+      String body =
+          "--" + boundary + "\r\n" +
+              "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+              "Content-Type: image/gif\r\n" +
+              "\r\n" +
+              contentStr + "\r\n" +
+              "--" + boundary + "--\r\n";
+
+      buffer.appendString(body);
+      req.headers().set("content-length", String.valueOf(buffer.length()));
       req.headers().set("content-type", "multipart/form-data; boundary=" + boundary);
-      if (abortClient) {
-        req.connectionHandler(conn -> {
-          vertx.setTimer(100, id -> {
-            conn.close();
-          });
-        });
-        req.write(pro + contentStr.substring(0, contentStr.length() / 2));
-      } else {
-        req.end(pro + contentStr + epi);
-      }
+      req.write(buffer).end();
     }));
 
     await();

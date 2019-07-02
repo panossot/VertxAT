@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0*3.7.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.6.9"})
 public class ConnectionPoolTest extends VertxTestBase {
 
   class FakeConnectionManager {
@@ -111,17 +111,7 @@ public class ConnectionPoolTest extends VertxTestBase {
           );
         }
       }
-      pool.getConnection(ar -> {
-        if (ar.succeeded()) {
-          FakeConnection conn = ar.result();
-          synchronized (conn) {
-            conn.inflight++;
-          }
-          waiter.handleConnection(conn);
-        } else {
-          waiter.handleFailure(ar.cause());
-        }
-      });
+      pool.getConnection(waiter.handler);
     }
   }
 
@@ -132,10 +122,11 @@ public class ConnectionPoolTest extends VertxTestBase {
     AtomicReference<Boolean> handleLock = new AtomicReference<>();
     FakeWaiter waiter = new FakeWaiter() {
       @Override
-      protected void onSuccess(FakeConnection conn) {
+      public synchronized void handleConnection(FakeConnection conn) {
         assertSame(conn.context, mgr.context);
         Pool<FakeConnection> pool = mgr.pool();
         handleLock.set(Thread.holdsLock(pool));
+        super.handleConnection(conn);
       }
     };
     mgr.getConnection(waiter);
@@ -156,10 +147,11 @@ public class ConnectionPoolTest extends VertxTestBase {
     AtomicReference<Boolean> holdsLock = new AtomicReference<>();
     FakeWaiter waiter = new FakeWaiter() {
       @Override
-      protected void onFailure() {
+      public synchronized void handleFailure(Throwable failure) {
         assertNull(Vertx.currentContext());
         Pool<FakeConnection> pool = mgr.pool();
         holdsLock.set(Thread.holdsLock(pool));
+        super.handleFailure(failure);
       }
     };
     mgr.getConnection(waiter);
@@ -470,7 +462,6 @@ public class ConnectionPoolTest extends VertxTestBase {
     assertEquals(1, mgr.size());
     assertEquals(1, mgr.removeExpired(2L));
     assertEquals(0, mgr.size());
-    assertWaitUntil(mgr::closed);
   }
 
   @Test
@@ -546,15 +537,16 @@ public class ConnectionPoolTest extends VertxTestBase {
         for (int i1 = 0; i1 < numConnections; i1++) {
           mgr.getConnection(new FakeWaiter() {
             @Override
-            protected void onFailure() {
+            public void handleFailure(Throwable failure) {
               latch.countDown();
             }
+
             @Override
-            protected void onSuccess(FakeConnection conn) {
+            public void handleConnection(FakeConnection conn) {
               int action = ThreadLocalRandom.current().nextInt(100);
               if (action < -1) {
                 latch.countDown();
-                conn.recycle();
+                conn.listener.onRecycle(0L);
               } /* else if (i < 30) {
                 latch.countDown();
                 throw new Exception();
@@ -604,9 +596,17 @@ public class ConnectionPoolTest extends VertxTestBase {
     private boolean cancelled;
     private boolean completed;
     private Object result;
+    private final Handler<AsyncResult<FakeConnection>> handler;
 
     FakeWaiter() {
       context = (ContextInternal) vertx.getOrCreateContext();
+      handler = ar -> {
+        if (ar.succeeded()) {
+          handleConnection(ar.result());
+        } else {
+          handleFailure(ar.cause());
+        }
+      };
     }
 
     synchronized boolean cancel() {
@@ -638,37 +638,22 @@ public class ConnectionPoolTest extends VertxTestBase {
       return completed && result instanceof Throwable;
     }
 
-    protected void onSuccess(FakeConnection conn) {
-
+    public synchronized void handleFailure(Throwable failure) {
+      assertFalse(completed);
+      completed = true;
+      result = failure;
     }
 
-    protected void onFailure() {
-
-    }
-
-    private synchronized void handleFailure(Throwable failure) {
-      synchronized (this) {
-        assertFalse(completed);
-        completed = true;
-        result = failure;
-      }
-      onFailure();
-    }
-
-    private synchronized void handleConnection(FakeConnection conn) {
-      boolean c;
-      synchronized (this) {
-        assertFalse(completed);
-        completed = true;
-        c = cancelled;
-        if (!cancelled) {
-          result = conn;
-        }
-      }
+    public synchronized void handleConnection(FakeConnection conn) {
+      assertFalse(completed);
+      completed = true;
       if (cancelled) {
-        conn.recycle();
+        conn.listener.onRecycle(0L);
       } else {
-        onSuccess(conn);
+        synchronized (conn) {
+          conn.inflight++;
+        }
+        result = conn;
       }
     }
 
@@ -795,7 +780,7 @@ public class ConnectionPoolTest extends VertxTestBase {
       }
     }
   */
-  private static class FakeConnection {
+  class FakeConnection {
 
     private static final int DISCONNECTED = 0;
     private static final int CONNECTING = 1;

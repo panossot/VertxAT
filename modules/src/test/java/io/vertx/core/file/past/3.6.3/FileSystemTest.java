@@ -53,7 +53,7 @@ import static org.hamcrest.CoreMatchers.instanceOf;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.6.9"})
 public class FileSystemTest extends VertxTestBase {
 
   private static final String DEFAULT_DIR_PERMS = "rwxr-xr-x";
@@ -1665,28 +1665,6 @@ public class FileSystemTest extends VertxTestBase {
         file.pause();
         file.resume();
         complete();
-      });
-      file.handler(buffer::appendBuffer);
-    }));
-    await();
-  }
-
-  @Test
-  public void testPausedEnd() throws Exception {
-    String fileName = "some-file.dat";
-    createFile(fileName, new byte[0]);
-    AtomicBoolean paused = new AtomicBoolean(false);
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), onSuccess(file -> {
-      Buffer buffer = Buffer.buffer();
-      paused.set(true);
-      file.pause();
-      vertx.setTimer(100, id -> {
-        paused.set(false);
-        file.resume();
-      });
-      file.endHandler(v -> {
-        assertFalse(paused.get());
-        testComplete();
       });
       file.handler(buffer::appendBuffer);
     }));

@@ -50,8 +50,9 @@ import static io.vertx.test.core.TestUtils.*;
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
+import org.jboss.eap.additional.testsuite.annotations.ATTest;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.7.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.7.0"})
 public class Http1xTest extends HttpTest {
 
   @Override
@@ -4110,7 +4111,7 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
-  @Test
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0*3.7.0"})
   public void testPausedHttpServerRequestPauseTheConnectionAtRequestEnd() throws Exception {
     int numRequests = 20;
     waitFor(numRequests);

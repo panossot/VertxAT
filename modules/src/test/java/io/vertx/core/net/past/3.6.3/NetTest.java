@@ -48,7 +48,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -66,7 +65,7 @@ import static io.vertx.test.core.TestUtils.*;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0**3.7.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.6.9"})
 public class NetTest extends VertxTestBase {
 
   private static final Logger log = LoggerFactory.getLogger(NetTest.class);
@@ -1599,12 +1598,8 @@ public class NetTest extends VertxTestBase {
       server.exceptionHandler(err -> complete());
       Handler<NetSocket> serverHandler = socket -> {
         indicatedServerName = socket.indicatedServerName();
-        SSLSession sslSession = socket.sslSession();
         if (socket.isSsl()) {
-          assertNotNull(sslSession);
           certificateChainChecker.accept(socket);
-        } else {
-          assertNull(sslSession);
         }
         AtomicBoolean upgradedServer = new AtomicBoolean();
         AtomicInteger upgradedServerCount = new AtomicInteger();
@@ -3484,28 +3479,6 @@ public class NetTest extends VertxTestBase {
       server.listen(remoteAddress, onSuccess(s -> latch.countDown()));
     });
     awaitLatch(latch);
-  }
-
-  @Test
-  public void testPausedDuringLastChunk() throws Exception {
-    server.connectHandler(so -> {
-      AtomicBoolean paused = new AtomicBoolean();
-      paused.set(true);
-      so.pause();
-      so.closeHandler(v -> {
-        paused.set(false);
-        so.resume();
-      });
-      so.endHandler(v -> {
-        assertFalse(paused.get());
-        testComplete();
-      });
-    });
-    startServer();
-    client.connect(testAddress, "localhost", onSuccess(so -> {
-      so.close();
-    }));
-    await();
   }
 
   protected void startServer() throws Exception {

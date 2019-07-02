@@ -24,7 +24,7 @@ import io.vertx.test.fakecluster.FakeClusterManager;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0"})
 public class ClusteredSharedCounterTest extends SharedCounterTest {
 
   @Override

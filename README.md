@@ -1,7 +1,7 @@
 VERT-X AT
 
 VertxAT is an implementation of the AT Structures for Vertx
-Current supported versions : 3.7.1 , 3.7.0
+Current supported versions : 3.7.1 , 3.7.0, 3.6.3
 
 
 Steps to execute :

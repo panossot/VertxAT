@@ -40,7 +40,7 @@ import io.vertx.core.net.PemKeyCertOptions;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0"})
 public class KeyStoreHelperTest {
 
   private static final VertxInternal vertx = (VertxInternal) VertxInternal.factory.vertx();
