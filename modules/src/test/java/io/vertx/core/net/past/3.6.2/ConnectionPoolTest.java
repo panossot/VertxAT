@@ -11,7 +11,12 @@
 
 package io.vertx.core.net;
 
-import io.vertx.core.*;
+import io.netty.channel.Channel;
+import io.netty.channel.embedded.EmbeddedChannel;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.impl.pool.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.test.core.VertxTestBase;
@@ -28,29 +33,27 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0**3.7.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.6.2"})
 public class ConnectionPoolTest extends VertxTestBase {
 
   class FakeConnectionManager {
 
-    private final Context context = vertx.getOrCreateContext();
     private final ConnectionProvider<FakeConnection> connector;
     private final int queueMaxSize;
-    private final int poolMaxSize;
+    private final int maxPoolSize;
     private Pool<FakeConnection> pool;
     private Set<FakeConnection> active = new HashSet<>();
     private boolean closed = true;
-    private int closeCount;
     private int seq;
     private final boolean fifo;
 
-    FakeConnectionManager(int queueMaxSize, int poolMaxSize, ConnectionProvider<FakeConnection> connector) {
-      this(queueMaxSize, poolMaxSize, connector, false);
+    FakeConnectionManager(int queueMaxSize, int maxPoolSize, ConnectionProvider<FakeConnection> connector) {
+      this(queueMaxSize, maxPoolSize, connector, false);
     }
 
-    FakeConnectionManager(int queueMaxSize, int poolMaxSize, ConnectionProvider<FakeConnection> connector, boolean fifo) {
+    FakeConnectionManager(int queueMaxSize, int maxPoolSize, ConnectionProvider<FakeConnection> connector, boolean fifo) {
       this.queueMaxSize = queueMaxSize;
-      this.poolMaxSize = poolMaxSize;
+      this.maxPoolSize = maxPoolSize;
       this.connector = connector;
       this.fifo = fifo;
     }
@@ -79,31 +82,25 @@ public class ConnectionPoolTest extends VertxTestBase {
       return pool;
     }
 
-    synchronized int closeCount() {
-      return closeCount;
-    }
-
     void getConnection(FakeWaiter waiter) {
       synchronized (this) {
         if (closed) {
           seq++;
           closed = false;
           pool = new Pool<>(
-            context,
             connector,
             queueMaxSize,
             1,
-            poolMaxSize,
+            maxPoolSize,
             v -> {
               synchronized (FakeConnectionManager.this) {
                 closed = true;
-                closeCount++;
               }
-            }, conn -> {
+            }, (channel, conn) -> {
             synchronized (FakeConnectionManager.this) {
               active.add(conn);
             }
-          }, conn -> {
+          }, (channel, conn) -> {
             synchronized (FakeConnectionManager.this) {
               active.remove(conn);
             }
@@ -111,17 +108,7 @@ public class ConnectionPoolTest extends VertxTestBase {
           );
         }
       }
-      pool.getConnection(ar -> {
-        if (ar.succeeded()) {
-          FakeConnection conn = ar.result();
-          synchronized (conn) {
-            conn.inflight++;
-          }
-          waiter.handleConnection(conn);
-        } else {
-          waiter.handleFailure(ar.cause());
-        }
-      });
+      pool.getConnection(waiter.context, waiter.handler);
     }
   }
 
@@ -132,10 +119,12 @@ public class ConnectionPoolTest extends VertxTestBase {
     AtomicReference<Boolean> handleLock = new AtomicReference<>();
     FakeWaiter waiter = new FakeWaiter() {
       @Override
-      protected void onSuccess(FakeConnection conn) {
-        assertSame(conn.context, mgr.context);
+      public synchronized void handleConnection(FakeConnection conn) {
+        assertNull(Vertx.currentContext());
+        assertSame(conn.context, context);
         Pool<FakeConnection> pool = mgr.pool();
         handleLock.set(Thread.holdsLock(pool));
+        super.handleConnection(conn);
       }
     };
     mgr.getConnection(waiter);
@@ -146,7 +135,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     waiter.assertSuccess(conn);
     waiter.recycle();
     assertEquals(0, mgr.size());
-    assertWaitUntil(() -> mgr.closed());
+    assertTrue(mgr.closed());
   }
 
   @Test
@@ -156,10 +145,11 @@ public class ConnectionPoolTest extends VertxTestBase {
     AtomicReference<Boolean> holdsLock = new AtomicReference<>();
     FakeWaiter waiter = new FakeWaiter() {
       @Override
-      protected void onFailure() {
+      public synchronized void handleFailure(Throwable failure) {
         assertNull(Vertx.currentContext());
         Pool<FakeConnection> pool = mgr.pool();
         holdsLock.set(Thread.holdsLock(pool));
+        super.handleFailure(failure);
       }
     };
     mgr.getConnection(waiter);
@@ -356,14 +346,19 @@ public class ConnectionPoolTest extends VertxTestBase {
     FakeWaiter waiter1 = new FakeWaiter();
     mgr.getConnection(waiter1);
     FakeConnection conn = connector.assertRequest();
+    assertFalse(conn.isActive());
     conn.connect();
     assertWaitUntil(waiter1::isSuccess);
+    assertTrue(conn.isActive());
     conn.recycle(false);
+    assertFalse(conn.isActive());
     FakeWaiter waiter2 = new FakeWaiter();
     mgr.getConnection(waiter2);
     assertWaitUntil(waiter2::isSuccess);
+    assertTrue(conn.isActive());
     waiter2.assertSuccess(conn);
     conn.recycle(true);
+    assertTrue(conn.isActive());
     assertEquals(0, mgr.size());
   }
 
@@ -470,54 +465,6 @@ public class ConnectionPoolTest extends VertxTestBase {
     assertEquals(1, mgr.size());
     assertEquals(1, mgr.removeExpired(2L));
     assertEquals(0, mgr.size());
-    assertWaitUntil(mgr::closed);
-  }
-
-  @Test
-  public void testCloseRecycledConnection() {
-    FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(2, 1, connector);
-    FakeWaiter waiter1 = new FakeWaiter();
-    mgr.getConnection(waiter1);
-    FakeConnection conn = connector.assertRequest();
-    conn.connect();
-    assertWaitUntil(waiter1::isSuccess);
-    conn.recycle(2L);
-    FakeWaiter waiter2 = new FakeWaiter();
-    // Recycle connection
-    mgr.getConnection(waiter2);
-    // But close it
-    conn.close();
-    // We have a race here
-    if (waiter2.isComplete()) {
-      // Either the waiter acquires the recycled connection before it's closed
-    } else {
-      // Or a connection request happens
-      conn = connector.assertRequest();
-    }
-  }
-
-  @Test
-  public void testQueueMaxSize() {
-    checkQueueMaxSize(2, 3);
-    checkQueueMaxSize(0, 3);
-  }
-
-  private void checkQueueMaxSize(int queueMaxSize, int poolMaxSize) {
-    FakeConnectionProvider connector = new FakeConnectionProvider();
-    FakeConnectionManager mgr = new FakeConnectionManager(queueMaxSize, poolMaxSize, connector);
-    FakeWaiter[] waiters = new FakeWaiter[poolMaxSize + queueMaxSize];
-    for (int i = 0;i < poolMaxSize + queueMaxSize;i++) {
-      FakeWaiter waiter = new FakeWaiter();
-      waiters[i] = waiter;
-      mgr.getConnection(waiter);
-    }
-    FakeWaiter waiter = new FakeWaiter();
-    mgr.getConnection(waiter);
-    assertWaitUntil(waiter::isFailure);
-    for (int i = 0;i < poolMaxSize + queueMaxSize;i++) {
-      assertFalse("Was not expecting connection no=" + i + " to be failed", waiters[i].isFailure());
-    }
   }
 
   @Test
@@ -546,15 +493,16 @@ public class ConnectionPoolTest extends VertxTestBase {
         for (int i1 = 0; i1 < numConnections; i1++) {
           mgr.getConnection(new FakeWaiter() {
             @Override
-            protected void onFailure() {
+            public void handleFailure(Throwable failure) {
               latch.countDown();
             }
+
             @Override
-            protected void onSuccess(FakeConnection conn) {
+            public void handleConnection(FakeConnection conn) {
               int action = ThreadLocalRandom.current().nextInt(100);
               if (action < -1) {
                 latch.countDown();
-                conn.recycle();
+                conn.listener.onRecycle(0L);
               } /* else if (i < 30) {
                 latch.countDown();
                 throw new Exception();
@@ -589,10 +537,10 @@ public class ConnectionPoolTest extends VertxTestBase {
     }
 
     assertWaitUntil(() -> mgr.closed());
-    assertEquals(1, mgr.closeCount());
 
     // Check state at the end
     assertEquals(0, mgr.size());
+    assertEquals(0, mgr.pool.waitersCount());
     assertEquals(0, mgr.pool.waitersInQueue());
     assertEquals(0, mgr.pool.weight());
     assertEquals(0, mgr.pool.capacity());
@@ -604,9 +552,17 @@ public class ConnectionPoolTest extends VertxTestBase {
     private boolean cancelled;
     private boolean completed;
     private Object result;
+    private final Handler<AsyncResult<FakeConnection>> handler;
 
     FakeWaiter() {
       context = (ContextInternal) vertx.getOrCreateContext();
+      handler = ar -> {
+        if (ar.succeeded()) {
+          handleConnection(ar.result());
+        } else {
+          handleFailure(ar.cause());
+        }
+      };
     }
 
     synchronized boolean cancel() {
@@ -638,37 +594,22 @@ public class ConnectionPoolTest extends VertxTestBase {
       return completed && result instanceof Throwable;
     }
 
-    protected void onSuccess(FakeConnection conn) {
-
+    public synchronized void handleFailure(Throwable failure) {
+      assertFalse(completed);
+      completed = true;
+      result = failure;
     }
 
-    protected void onFailure() {
-
-    }
-
-    private synchronized void handleFailure(Throwable failure) {
-      synchronized (this) {
-        assertFalse(completed);
-        completed = true;
-        result = failure;
-      }
-      onFailure();
-    }
-
-    private synchronized void handleConnection(FakeConnection conn) {
-      boolean c;
-      synchronized (this) {
-        assertFalse(completed);
-        completed = true;
-        c = cancelled;
-        if (!cancelled) {
-          result = conn;
-        }
-      }
+    public synchronized void handleConnection(FakeConnection conn) {
+      assertFalse(completed);
+      completed = true;
       if (cancelled) {
-        conn.recycle();
+        conn.listener.onRecycle(0L);
       } else {
-        onSuccess(conn);
+        synchronized (conn) {
+          conn.inflight++;
+        }
+        result = conn;
       }
     }
 
@@ -795,7 +736,7 @@ public class ConnectionPoolTest extends VertxTestBase {
       }
     }
   */
-  private static class FakeConnection {
+  class FakeConnection {
 
     private static final int DISCONNECTED = 0;
     private static final int CONNECTING = 1;
@@ -805,10 +746,12 @@ public class ConnectionPoolTest extends VertxTestBase {
     private final ContextInternal context;
     private final ConnectionListener<FakeConnection> listener;
     private final Future<ConnectResult<FakeConnection>> future;
+    private final Channel channel = new EmbeddedChannel();
 
     private long inflight;
     private long concurrency = 1;
     private int status = DISCONNECTED;
+    private boolean active;
 
     FakeConnection(ContextInternal context, ConnectionListener<FakeConnection> listener, Future<ConnectResult<FakeConnection>> future) {
       this.context = context;
@@ -816,12 +759,16 @@ public class ConnectionPoolTest extends VertxTestBase {
       this.future = future;
     }
 
+    synchronized boolean isActive() {
+      return active;
+    }
+
     synchronized void close() {
       if (status != CONNECTED) {
         throw new IllegalStateException();
       }
       status = CLOSED;
-      listener.onEvict();
+      listener.onDiscard();
     }
 
     synchronized long recycle(boolean dispose) {
@@ -836,6 +783,16 @@ public class ConnectionPoolTest extends VertxTestBase {
       inflight -= 1;
       listener.onRecycle(timestamp);
       return inflight;
+    }
+
+    synchronized void activate() {
+      assertFalse(active);
+      active = true;
+    }
+
+    synchronized void deactivate() {
+      assertTrue(active);
+      active = false;
     }
 
     synchronized FakeConnection concurrency(long value) {
@@ -870,7 +827,7 @@ public class ConnectionPoolTest extends VertxTestBase {
       context.nettyEventLoop().execute(() -> {
         synchronized (FakeConnection.this) {
           status = CONNECTED;
-          future.complete(new ConnectResult<>(this, concurrency, 1));
+          future.complete(new ConnectResult<>(this, concurrency, channel, context, 1));
         }
       });
       return this;
@@ -885,9 +842,18 @@ public class ConnectionPoolTest extends VertxTestBase {
 
     @Override
     public void close(FakeConnection conn) {
-      conn.listener.onEvict();
+      conn.listener.onDiscard();
     }
 
+    @Override
+    public void activate(FakeConnection conn) {
+      conn.activate();
+    }
+
+    @Override
+    public void deactivate(FakeConnection conn) {
+      conn.deactivate();
+    }
   }
 
   class FakeConnectionProvider extends FakeConnectionProviderBase {

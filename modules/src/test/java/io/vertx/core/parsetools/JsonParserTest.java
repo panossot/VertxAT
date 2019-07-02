@@ -46,6 +46,7 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
+import org.jboss.eap.additional.testsuite.annotations.ATTest;
 
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class JsonParserTest {
@@ -781,7 +782,7 @@ public class JsonParserTest {
     assertFalse(stream.isPaused());
   }
 
-  @Test
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.3"})
   public void testStreamEnd() {
     FakeStream stream = new FakeStream();
     JsonParser parser = JsonParser.newParser(stream);
@@ -795,6 +796,19 @@ public class JsonParserTest {
     //regression check for #2790 - ensure that by accident resume method is not called.
     assertEquals(0, stream.pauseCount());
     assertEquals(0, stream.resumeCount());
+  }
+
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.6.2"})
+  public void testStreamEnd2() {
+    FakeStream stream = new FakeStream();
+    JsonParser parser = JsonParser.newParser(stream);
+    List<JsonEvent> events = new ArrayList<>();
+    parser.handler(events::add);
+    AtomicInteger ended = new AtomicInteger();
+    parser.endHandler(v -> ended.incrementAndGet());
+    stream.end();
+    assertEquals(0, events.size());
+    assertEquals(1, ended.get());
   }
 
   @Test

@@ -2053,7 +2053,7 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
-  @Test
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.3**3.7.0"})
   public void testContexts() throws Exception {
     Set<ContextInternal> contexts = new ConcurrentHashSet<>();
     AtomicInteger cnt = new AtomicInteger();
@@ -4722,7 +4722,7 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
-  @Test
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.3**3.7.0"})
   public void testSendFilePipelined() throws Exception {
     int n = 4;
     waitFor(n);

@@ -1,13 +1,14 @@
 VERT-X AT
 
 VertxAT is an implementation of the AT Structures for Vertx
-Current supported versions : 3.7.1 , 3.7.0, 3.6.3
+Current supported versions : 3.7.1 , 3.7.0, 3.6.3, 3.6.2
 
 
 Steps to execute :
 
-1. export VERTX_VERSION='version of VertX branch'
-2. mvn clean install -Dmaster
+1. Build the VertX version you want to test
+2. export VERTX_VERSION='version of VertX branch'
+3. mvn clean install -Dmaster
 
 ## License
 
