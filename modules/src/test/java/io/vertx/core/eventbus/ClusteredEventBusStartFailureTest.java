@@ -26,11 +26,12 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Thomas Segismont
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
+import org.jboss.eap.additional.testsuite.annotations.ATTest;
 
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class ClusteredEventBusStartFailureTest extends AsyncTestBase {
 
-  @Test
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.2"})
   public void testCallbackInvokedOnFailure() throws Exception {
 
     // will trigger java.net.UnknownHostException
@@ -39,6 +40,31 @@ public class ClusteredEventBusStartFailureTest extends AsyncTestBase {
     VertxOptions options = new VertxOptions()
       .setClusterManager(new FakeClusterManager());
     options.getEventBusOptions().setHost(hostName);
+
+    AtomicReference<AsyncResult<Vertx>> resultRef = new AtomicReference<>();
+
+    CountDownLatch latch = new CountDownLatch(1);
+    Vertx.clusteredVertx(options, ar -> {
+      resultRef.set(ar);
+      latch.countDown();
+    });
+    awaitLatch(latch);
+
+    assertFalse(resultRef.get() == null);
+    assertTrue(resultRef.get().failed());
+    assertTrue("Was expecting failure to be an instance of UnknownHostException", resultRef.get().cause() instanceof UnknownHostException);
+  }
+
+
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.6.1"})
+  public void testCallbackInvokedOnFailure2() throws Exception {
+
+    // will trigger java.net.UnknownHostException
+    String hostName = "zoom.zoom.zen.tld";
+
+    VertxOptions options = new VertxOptions()
+      .setClusterManager(new FakeClusterManager())
+      .setClusterHost(hostName);
 
     AtomicReference<AsyncResult<Vertx>> resultRef = new AtomicReference<>();
 

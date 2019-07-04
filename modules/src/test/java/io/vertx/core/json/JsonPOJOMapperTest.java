@@ -28,6 +28,7 @@ import static org.junit.Assert.*;
  * @author <a href="https://github.com/lukehutch">Luke Hutchison</a>
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
+import org.jboss.eap.additional.testsuite.annotations.ATTest;
 
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
 public class JsonPOJOMapperTest {
@@ -101,13 +102,13 @@ public class JsonPOJOMapperTest {
     assertNotNull(json.getInstant("isodate"));
   }
 
-  @Test
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#6.3.1"})
   public void testInstantToPOJO() {
     MyType2 obj = new JsonObject().put("isodate", Instant.EPOCH).mapTo(MyType2.class);
     assertEquals(Instant.EPOCH, obj.isodate);
   }
 
-  @Test
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#6.3.1"})
   public void testInvalidInstantToPOJO() {
     testInvalidValueToPOJO("isodate");
   }

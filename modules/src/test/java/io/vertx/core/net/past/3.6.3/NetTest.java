@@ -64,6 +64,7 @@ import static io.vertx.test.core.TestUtils.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
+import org.jboss.eap.additional.testsuite.annotations.ATTest;
 
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.6.9"})
 public class NetTest extends VertxTestBase {
@@ -1248,7 +1249,7 @@ public class NetTest extends VertxTestBase {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE, true, false, false, false);
   }
 
-  @Test
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.1"})
   // StartTLS client specifies cert but it's not trusted
   public void testStartTLSClientCertClientNotTrusted() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS, true, false, false, true);

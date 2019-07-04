@@ -31,6 +31,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
+import org.jboss.eap.additional.testsuite.annotations.ATTest;
 
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.6.9"})
 public class JsonMapperTest extends VertxTestBase {
@@ -122,7 +123,7 @@ public class JsonMapperTest extends VertxTestBase {
     assertEquals(original.value, ((Map)(incorrect.get(0))).get("value"));
   }
 
-  @Test
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.1"})
   public void testInstantDecoding() {
     Pojo original = new Pojo();
     original.instant = Instant.from(ISO_INSTANT.parse("2018-06-20T07:25:38.397Z"));
