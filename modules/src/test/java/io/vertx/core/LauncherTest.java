@@ -33,10 +33,9 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class LauncherTest extends VertxTestBase {
 
   private String expectedVersion;
@@ -537,7 +536,7 @@ public class LauncherTest extends VertxTestBase {
     if (opts.getMetricsOptions().isEnabled()) {
       def.getMetricsOptions().setEnabled(true);
     }
-    assertEquals(def, opts);
+    assertEquals(def.toJson(), opts.toJson());
 
   }
 
@@ -557,7 +556,7 @@ public class LauncherTest extends VertxTestBase {
     if (opts.getMetricsOptions().isEnabled()) {
       def.getMetricsOptions().setEnabled(true);
     }
-    assertEquals(def, opts);
+    assertEquals(def.toJson(), opts.toJson());
   }
 
   @Test

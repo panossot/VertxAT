@@ -10,6 +10,7 @@
  */
 package io.vertx.core.streams;
 
+import io.vertx.core.Future;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.fakestream.FakeStream;
 import org.junit.Test;
@@ -20,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class PipeTest extends AsyncTestBase {
 
   private FakeStream<Object> dst;
@@ -48,7 +49,10 @@ public class PipeTest extends AsyncTestBase {
       assertEquals(Arrays.asList(o1, o2, o3), emitted);
       testComplete();
     }));
-    src.write(o1).write(o2).write(o3).end();
+    src.write(o1);
+    src.write(o2);
+    src.write(o3);
+    src.end();
     await();
   }
 

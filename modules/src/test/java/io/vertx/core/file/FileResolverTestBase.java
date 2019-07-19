@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public abstract class FileResolverTestBase extends VertxTestBase {
 
   private final String cacheBaseDir = new File(System.getProperty("java.io.tmpdir", ".") + File.separator + "vertx-cache").getAbsolutePath();
@@ -107,7 +107,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testResolveFileFromClasspathDisableCaching() throws Exception {
-    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setFileResolverCachingEnabled(false));
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setFileSystemOptions(new FileSystemOptions().setFileCachingEnabled(true)));
     try {
       for (int i = 0; i < 2; i++) {
         File file = vertx.resolveFile("afile.html");
@@ -237,12 +237,12 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
       res.response().sendFile(webRoot + "/somefile.html");
     }).listen(onSuccess(res -> {
-      vertx.createHttpClient(new HttpClientOptions()).request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
+      vertx.createHttpClient(new HttpClientOptions()).request(HttpMethod.GET, 8080, "localhost", "/", onSuccess(resp -> {
         resp.bodyHandler(buff -> {
           assertTrue(buff.toString().startsWith("<html><body>blah</body></html>"));
           testComplete();
         });
-      }).end();
+      })).end();
     }));
     await();
   }
@@ -296,7 +296,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   }
 
   private void testCaching(boolean enabled) throws Exception {
-    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setFileResolverCachingEnabled(enabled));
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setFileSystemOptions(new FileSystemOptions().setFileCachingEnabled(enabled)));
     File tmp = File.createTempFile("vertx", ".bin");
     tmp.deleteOnExit();
     URL url = tmp.toURI().toURL();

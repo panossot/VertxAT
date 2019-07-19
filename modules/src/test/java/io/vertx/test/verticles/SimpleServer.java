@@ -12,7 +12,7 @@
 package io.vertx.test.verticles;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
@@ -20,11 +20,11 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class SimpleServer extends AbstractVerticle {
 
   @Override
-  public void start(Future<Void> startFuture) throws Exception {
+  public void start(Promise<Void> startFuture) throws Exception {
     HttpServer server = vertx.createHttpServer(new HttpServerOptions().setPort(8080));
     server.requestHandler(req -> req.response().end());
     server.listen(res -> {

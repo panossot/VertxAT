@@ -30,7 +30,7 @@ import java.util.function.Consumer;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public abstract class EventBusTestBase extends VertxTestBase {
 
   protected static final String ADDRESS1 = "some-address1";
@@ -350,7 +350,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
       }
     }, new DeploymentOptions().setWorker(true));
     awaitLatch(latch);
-    vertices[0].eventBus().send(ADDRESS1, "whatever", reply -> {
+    vertices[0].eventBus().request(ADDRESS1, "whatever", reply -> {
       assertTrue(reply.succeeded());
       assertEquals(expectedBody, reply.result().body());
       testComplete();
@@ -394,7 +394,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
     waitFor(4);
 
     // On an "external" thread
-    vertices[0].eventBus().send("blah", "blah", ar -> {
+    vertices[0].eventBus().request("blah", "blah", ar -> {
       assertTrue(ar.failed());
       if (ar.cause() instanceof ReplyException) {
         ReplyException cause = (ReplyException) ar.cause();
@@ -409,7 +409,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
     // On a EL context
     vertices[0].runOnContext(v -> {
       Context ctx = vertices[0].getOrCreateContext();
-      vertices[0].eventBus().send("blah", "blah", ar -> {
+      vertices[0].eventBus().request("blah", "blah", ar -> {
         assertTrue(ar.failed());
         if (ar.cause() instanceof ReplyException) {
           ReplyException cause = (ReplyException) ar.cause();
@@ -427,7 +427,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
       @Override
       public void start() throws Exception {
         Context ctx = getVertx().getOrCreateContext();
-        vertices[0].eventBus().send("blah", "blah", ar -> {
+        vertices[0].eventBus().request("blah", "blah", ar -> {
           assertTrue(ar.failed());
           if (ar.cause() instanceof ReplyException) {
             ReplyException cause = (ReplyException) ar.cause();
@@ -443,7 +443,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
 
     // Inside executeBlocking
     vertices[0].executeBlocking(fut -> {
-      vertices[0].eventBus().send("blah", "blah", ar -> {
+      vertices[0].eventBus().request("blah", "blah", ar -> {
         assertTrue(ar.failed());
         if (ar.cause() instanceof ReplyException) {
           ReplyException cause = (ReplyException) ar.cause();

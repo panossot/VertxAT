@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class HttpRequestStreamTest extends VertxTestBase {
 
   private HttpServer server;
@@ -82,10 +82,10 @@ public class HttpRequestStreamTest extends VertxTestBase {
           paused.set(false);
           httpStream.resume();
           client = vertx.createHttpClient(new HttpClientOptions());
-          client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", path, resp -> {
+          client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", path, onSuccess(resp -> {
             assertEquals(200, resp.statusCode());
             testComplete();
-          }).end();
+          })).end();
         });
       });
     });

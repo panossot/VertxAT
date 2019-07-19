@@ -33,7 +33,7 @@ import org.junit.Test;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class SSLEngineTest extends HttpTestBase {
 
   private static boolean isJava9() {
@@ -129,10 +129,10 @@ public class SSLEngineTest extends HttpTestBase {
           .setUseAlpn(useAlpn)
           .setTrustAll(true)
           .setProtocolVersion(version));
-      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         testComplete();
-      });
+      }));
     }));
     await();
   }

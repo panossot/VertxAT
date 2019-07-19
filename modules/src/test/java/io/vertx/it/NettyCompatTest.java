@@ -26,7 +26,7 @@ import org.junit.Test;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class NettyCompatTest extends VertxTestBase {
 
   @Test
@@ -50,12 +50,12 @@ public class NettyCompatTest extends VertxTestBase {
               .setSsl(true)
               .setSslEngineOptions(new OpenSSLEngineOptions())
               .setTrustStoreOptions(Trust.SERVER_JKS.get()));
-          client.getNow(8443, "localhost", "/somepath", resp -> {
+          client.getNow(8443, "localhost", "/somepath", onSuccess(resp -> {
             resp.bodyHandler(buff -> {
               assertEquals("OK", buff.toString());
               testComplete();
             });
-          });
+          }));
         }));
     await();
   }

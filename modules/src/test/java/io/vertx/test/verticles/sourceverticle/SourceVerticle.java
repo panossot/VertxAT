@@ -13,19 +13,19 @@ package io.vertx.test.verticles.sourceverticle;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.test.verticles.sourceverticle.somepackage.OtherSourceVerticle;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class SourceVerticle extends AbstractVerticle {
 
 
   @Override
-  public void start(Future<Void> startFuture) throws Exception {
+  public void start(Promise<Void> startFuture) throws Exception {
     vertx.deployVerticle("java:" + OtherSourceVerticle.class.getName().replace('.', '/') + ".java", new DeploymentOptions(), ar -> {
       if (ar.succeeded()) {
         startFuture.complete((Void) null);

@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class HostnameResolutionTest extends VertxTestBase {
 
   private FakeDNSServer dnsServer;
@@ -147,14 +147,14 @@ public class HostnameResolutionTest extends VertxTestBase {
         listenLatch.countDown();
       }));
       awaitLatch(listenLatch);
-      client.getNow(8080, "vertx.io", "/somepath", resp -> {
+      client.getNow(8080, "vertx.io", "/somepath", onSuccess(resp -> {
         Buffer buffer = Buffer.buffer();
         resp.handler(buffer::appendBuffer);
         resp.endHandler(v -> {
           assertEquals(Buffer.buffer("foo"), buffer);
           testComplete();
         });
-      });
+      }));
       await();
     } finally {
       client.close();
@@ -442,7 +442,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     NetServer server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost(localhost.getHostAddress()));
     try {
       server.connectHandler(so -> {
-        so.write("hello").end();
+        so.end(Buffer.buffer("hello"));
       });
       server.listen(ar -> {
         if (ar.succeeded()) {

@@ -13,7 +13,7 @@ package io.vertx.test.verticles;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
-import io.vertx.core.Future;
+import io.vertx.core.Promise;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -22,7 +22,7 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class TestVerticle2 extends AbstractVerticle {
 
   private static Set<Context> contexts = new HashSet<>();
@@ -40,9 +40,9 @@ public class TestVerticle2 extends AbstractVerticle {
   }
 
   @Override
-  public void stop(Future<Void> stopFuture) throws Exception {
-    vertx.eventBus().send("tvstopped", "stopped", reply -> {
-      stopFuture.complete(null);
+  public void stop(Promise<Void> stopPromise) throws Exception {
+    vertx.eventBus().request("tvstopped", "stopped", reply -> {
+      stopPromise.complete(null);
     });
   }
 }

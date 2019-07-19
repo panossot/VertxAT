@@ -19,8 +19,8 @@ import java.util.concurrent.TimeUnit;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
@@ -45,7 +45,7 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
  * <p>
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class HttpProxy extends TestProxyBase {
 
   private static final int PORT = 13128;
@@ -133,29 +133,32 @@ public class HttpProxy extends TestProxyBase {
           uri = forceUri;
         }
         HttpClient client = vertx.createHttpClient();
-        HttpClientRequest clientRequest = client.getAbs(uri, resp -> {
-          for (String name : resp.headers().names()) {
-            request.response().putHeader(name, resp.headers().getAll(name));
+        HttpClientRequest clientRequest = client.getAbs(uri, ar -> {
+          if (ar.succeeded()) {
+            HttpClientResponse resp = ar.result();
+            for (String name : resp.headers().names()) {
+              request.response().putHeader(name, resp.headers().getAll(name));
+            }
+            resp.bodyHandler(body -> {
+              request.response().end(body);
+            });
+          } else {
+            Throwable e = ar.cause();
+            log.debug("exception", e);
+            int status;
+            if (e instanceof UnknownHostException) {
+              status = 504;
+            } else {
+              status = 400;
+            }
+            request.response().setStatusCode(status).end(e.toString() + " on client request");
           }
-          resp.bodyHandler(body -> {
-            request.response().end(body);
-          });
         });
         for (String name : request.headers().names()) {
           if (!name.equals("Proxy-Authorization")) {
             clientRequest.putHeader(name, request.headers().getAll(name));
           }
         }
-        clientRequest.exceptionHandler(e -> {
-          log.debug("exception", e);
-          int status;
-          if (e instanceof UnknownHostException) {
-            status = 504;
-          } else {
-            status = 400;
-          }
-          request.response().setStatusCode(status).end(e.toString() + " on client request");
-        });
         clientRequest.end();
       } else {
         request.response().setStatusCode(405).end("method not supported");

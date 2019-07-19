@@ -40,7 +40,7 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class NamedWorkerPoolTest extends VertxTestBase {
 
   @Rule
@@ -55,7 +55,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       .setMaxWorkerExecuteTime(maxWorkerExecuteTime);
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         vertx.executeBlocking(fut -> {
           try {
             SECONDS.sleep(5);
@@ -225,8 +225,8 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       Thread t = Thread.currentThread();
       assertTrue(t instanceof VertxThread);
       VertxThread thread = (VertxThread) t;
-      assertEquals(maxExecuteTime, thread.getMaxExecTime());
-      assertEquals(maxExecuteTimeUnit, thread.getMaxExecTimeUnit());
+      assertEquals(maxExecuteTime, thread.maxExecTime());
+      assertEquals(maxExecuteTimeUnit, thread.maxExecTimeUnit());
       f.complete();
     }, res -> {
       testComplete();

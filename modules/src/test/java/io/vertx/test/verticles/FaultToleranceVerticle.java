@@ -14,13 +14,14 @@ package io.vertx.test.verticles;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,7 @@ import java.util.List;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class FaultToleranceVerticle extends AbstractVerticle {
   private static final Logger log = LoggerFactory.getLogger(FaultToleranceVerticle.class);
 
@@ -44,12 +45,12 @@ public class FaultToleranceVerticle extends AbstractVerticle {
     numAddresses = config.getInteger("addressesCount");
     List<Future> registrationFutures = new ArrayList<>(numAddresses);
     for (int i = 0; i < numAddresses; i++) {
-      Future<Void> registrationFuture = Future.future();
-      registrationFutures.add(registrationFuture);
+      Promise<Void> registrationFuture = Promise.promise();
+      registrationFutures.add(registrationFuture.future());
       vertx.eventBus().consumer(createAddress(id, i), msg -> msg.reply("pong")).completionHandler(registrationFuture);
     }
-    Future<Void> registrationFuture = Future.future();
-    registrationFutures.add(registrationFuture);
+    Promise<Void> registrationFuture = Promise.promise();
+    registrationFutures.add(registrationFuture.future());
     vertx.eventBus().consumer("ping", this::ping).completionHandler(registrationFuture);
     CompositeFuture.all(registrationFutures).setHandler(ar -> {
       if (ar.succeeded()) {
@@ -63,7 +64,7 @@ public class FaultToleranceVerticle extends AbstractVerticle {
     for (int i = 0; i < jsonArray.size(); i++) {
       int node = jsonArray.getInteger(i);
       for (int j = 0; j < numAddresses; j++) {
-        vertx.eventBus().send(createAddress(node, j), "ping", ar -> {
+        vertx.eventBus().request(createAddress(node, j), "ping", ar -> {
           if (ar.succeeded()) {
             vertx.eventBus().send("control", "pong");
           } else {

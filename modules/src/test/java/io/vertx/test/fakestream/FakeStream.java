@@ -12,6 +12,7 @@ package io.vertx.test.fakestream;
 
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.streams.ReadStream;
@@ -29,7 +30,7 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
 
   private boolean emitting;
@@ -95,18 +96,19 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
     return writable;
   }
 
-  public synchronized void end() {
+  public synchronized Future<Void> end() {
     if (ended) {
       throw new IllegalStateException();
     }
     ended = true;
     if (pending.size() > 0) {
-      return;
+      return Future.succeededFuture();
     }
     Handler<Void> handler = endHandler;
     if (handler != null) {
       handler.handle(null);
     }
+    return Future.succeededFuture();
   }
 
   @Override
@@ -200,13 +202,14 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
   }
 
   @Override
-  public FakeStream<T> write(T data) {
+  public Future<Void> write(T data) {
+    Future<Void> fut = Future.failedFuture("Not yet implemented");
     emit(data);
-    return this;
+    return fut;
   }
 
   @Override
-  public WriteStream<T> write(T data, Handler<AsyncResult<Void>> handler) {
+  public void write(T data, Handler<AsyncResult<Void>> handler) {
     throw new UnsupportedOperationException();
   }
 

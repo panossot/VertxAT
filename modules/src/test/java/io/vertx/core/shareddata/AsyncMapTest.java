@@ -13,6 +13,7 @@ package io.vertx.core.shareddata;
 
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
@@ -35,7 +36,7 @@ import static io.vertx.test.core.TestUtils.*;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public abstract class AsyncMapTest extends VertxTestBase {
 
   protected abstract Vertx getVertx();
@@ -687,11 +688,11 @@ public abstract class AsyncMapTest extends VertxTestBase {
   protected void loadData(Map<JsonObject, Buffer> map, BiConsumer<Vertx, AsyncMap<JsonObject, Buffer>> test) {
     List<Future> futures = new ArrayList<>(map.size());
     map.forEach((key, value) -> {
-      Future future = Future.future();
+      Promise future = Promise.promise();
       getVertx().sharedData().getAsyncMap("foo", onSuccess(asyncMap -> {
         asyncMap.put(key, value, future);
       }));
-      futures.add(future);
+      futures.add(future.future());
     });
     CompositeFuture.all(futures).setHandler(onSuccess(cf -> {
       Vertx v = getVertx();

@@ -12,6 +12,7 @@
 package io.vertx.core.streams;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
@@ -28,7 +29,7 @@ import static org.junit.Assert.*;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class PumpTest {
 
   @Test
@@ -200,13 +201,14 @@ public class PumpTest {
       return this;
     }
 
-    public FakeWriteStream write(T data) {
+    public Future<Void> write(T data) {
+      Future<Void> fut = Future.failedFuture("Not yet implemented");
       received.add(data);
-      return this;
+      return fut;
     }
 
     @Override
-    public WriteStream<T> write(T data, Handler<AsyncResult<Void>> handler) {
+    public void write(T data, Handler<AsyncResult<Void>> handler) {
       throw new UnsupportedOperationException();
     }
 
@@ -215,7 +217,8 @@ public class PumpTest {
     }
 
     @Override
-    public void end() {
+    public Future<Void> end() {
+      throw new UnsupportedOperationException();
     }
 
     @Override
