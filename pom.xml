@@ -180,7 +180,7 @@
                       <argument>${basedir}</argument>
 		      <argument>${basedir}/modules/src/test/java</argument>
 		      <argument>${serverDir2}</argument>
-                      <argument>${VERTX_VERSION}</argument>
+                      <argument>${JBOSS_VERSION}</argument>
 		      <argument>versionOrder</argument>
 		      <argument></argument>
 		      <argument></argument>

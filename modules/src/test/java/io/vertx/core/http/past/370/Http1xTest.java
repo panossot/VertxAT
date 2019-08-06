@@ -52,7 +52,7 @@ import static io.vertx.test.core.TestUtils.*;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 import org.jboss.eap.additional.testsuite.annotations.ATTest;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.7.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.7.0"})
 public class Http1xTest extends HttpTest {
 
   @Override
@@ -2053,7 +2053,7 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
-  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.3**3.7.0"})
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.3*3.7.0"})
   public void testContexts() throws Exception {
     Set<ContextInternal> contexts = new ConcurrentHashSet<>();
     AtomicInteger cnt = new AtomicInteger();
@@ -4722,7 +4722,7 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
-  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.3**3.7.0"})
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.3*3.7.0"})
   public void testSendFilePipelined() throws Exception {
     int n = 4;
     waitFor(n);

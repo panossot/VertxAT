@@ -21,7 +21,7 @@ import io.vertx.test.tls.Trust;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.7.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.7.1"})
 public class Http2TestBase extends HttpTestBase {
 
   static HttpServerOptions createHttp2ServerOptions(int port, String host) {

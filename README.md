@@ -8,7 +8,8 @@ Steps to execute :
 
 1. Build the VertX version you want to test
 2. export VERTX_VERSION='version of VertX branch'
-3. mvn clean install -Dmaster
+3. export JBOSS_VERSION='version of VertX branch ending with Final', for example if VERTX_VERSION=4.0.0-SNAPSHOT then JBOSS_VERSION=4.0.0.Final-SNAPSHOT
+4. mvn clean install -Dmaster
 
 ## License
 

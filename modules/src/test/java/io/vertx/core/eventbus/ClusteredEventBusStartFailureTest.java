@@ -56,7 +56,7 @@ public class ClusteredEventBusStartFailureTest extends AsyncTestBase {
   }
 
 
-  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.6.1"})
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.6.1"})
   public void testCallbackInvokedOnFailure2() throws Exception {
 
     // will trigger java.net.UnknownHostException

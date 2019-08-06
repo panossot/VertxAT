@@ -798,7 +798,7 @@ public class JsonParserTest {
     assertEquals(0, stream.resumeCount());
   }
 
-  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.6.2"})
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.6.2"})
   public void testStreamEnd2() {
     FakeStream stream = new FakeStream();
     JsonParser parser = JsonParser.newParser(stream);

@@ -100,7 +100,7 @@ import static io.vertx.test.core.TestUtils.assertIllegalStateException;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1**3.7.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1*3.7.1"})
 public class Http2ServerTest extends Http2TestBase {
 
   private static Http2Headers headers(String method, String scheme, String path) {

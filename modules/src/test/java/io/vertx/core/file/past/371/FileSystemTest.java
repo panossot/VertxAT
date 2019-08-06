@@ -53,7 +53,7 @@ import static org.hamcrest.CoreMatchers.instanceOf;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0**3.7.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0*3.7.1"})
 public class FileSystemTest extends VertxTestBase {
 
   private static final String DEFAULT_DIR_PERMS = "rwxr-xr-x";

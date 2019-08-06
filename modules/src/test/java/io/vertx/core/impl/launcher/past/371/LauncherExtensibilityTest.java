@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.7.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.7.1"})
 public class LauncherExtensibilityTest extends CommandTestBase {
 
   private static AtomicReference<Boolean> spy = new AtomicReference<>();

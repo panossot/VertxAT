@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0**3.6.9"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.6.9"})
 public abstract class FileResolverTestBase extends VertxTestBase {
 
   protected FileResolver resolver;
