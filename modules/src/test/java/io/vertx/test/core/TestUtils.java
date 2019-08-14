@@ -321,7 +321,7 @@ public class TestUtils {
     }
   }
 
-  public static void assertIllegalStateException2(Supplier<Future<?>> runnable) {
+  public static void assertIllegalStateExceptionAsync(Supplier<Future<?>> runnable) {
     Future<?> fut = runnable.get();
     assertTrue(fut.failed());
     assertTrue(fut.cause() instanceof IllegalStateException);
