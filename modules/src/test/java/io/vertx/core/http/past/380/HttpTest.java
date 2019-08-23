@@ -52,7 +52,7 @@ import static java.util.Collections.singletonList;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.0*3.8.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.0*3.8.1"})
 public abstract class HttpTest extends HttpTestBase {
 
   @Rule
@@ -504,7 +504,6 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
   public void testServerChainingSendFile() throws Exception {
     File file = setupFile("test-server-chaining.dat", "blah");
     server.requestHandler(req -> {
@@ -4529,7 +4528,6 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
   public void testCloseHandlerWhenConnectionClose() throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();

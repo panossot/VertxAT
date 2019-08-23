@@ -30,7 +30,7 @@ import java.util.function.Consumer;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.1"})
 public abstract class EventBusTestBase extends VertxTestBase {
 
   protected static final String ADDRESS1 = "some-address1";

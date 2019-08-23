@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.1"})
 public class EventBusInterceptorTest extends VertxTestBase {
 
   protected EventBus eb;

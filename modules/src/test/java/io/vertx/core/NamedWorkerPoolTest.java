@@ -40,7 +40,7 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.1"})
 public class NamedWorkerPoolTest extends VertxTestBase {
 
   @Rule

@@ -22,7 +22,7 @@ import org.junit.Test;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1*3.7.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1*3.8.1"})
 public class Http2CompressionTest extends Http2TestBase {
 
     private static final String COMPRESS_TEST_STRING = "/*\n"

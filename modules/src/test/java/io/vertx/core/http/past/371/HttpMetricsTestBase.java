@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1*3.8.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1*3.8.1"})
 public abstract class HttpMetricsTestBase extends HttpTestBase {
 
   private final HttpVersion protocol;
