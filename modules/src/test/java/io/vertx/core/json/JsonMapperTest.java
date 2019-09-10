@@ -32,7 +32,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0*3.9.9"})
 public class JsonMapperTest extends VertxTestBase {
 
   @Test
