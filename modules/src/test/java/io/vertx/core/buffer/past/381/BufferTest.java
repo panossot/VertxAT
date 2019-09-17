@@ -14,10 +14,11 @@ package io.vertx.core.buffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.IllegalReferenceCountException;
-import io.vertx.core.buffer.impl.BufferImpl;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.spi.BufferFactory;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
@@ -33,7 +34,7 @@ import static org.junit.Assert.*;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.9.9"})
 public class BufferTest {
 
   private static ByteBuf paddedByteBuf(int padding, byte[] bytes) {
@@ -1105,7 +1106,7 @@ public class BufferTest {
 
   @Test
   public void testDirect() {
-    Buffer buff = BufferImpl.directBuffer("hello world".getBytes());
+    Buffer buff = Buffer.factory.directBuffer("hello world".getBytes());
     assertEquals("hello world", buff.toString());
     buff.appendString(" foobar");
     assertEquals("hello world foobar", buff.toString());
