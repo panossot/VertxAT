@@ -32,7 +32,7 @@ import java.util.function.Function;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.1*3.9.9"})
 public class FutureTest extends VertxTestBase {
 
   @Test
@@ -90,6 +90,37 @@ public class FutureTest extends VertxTestBase {
     assertTrue(future.isComplete());
     assertNull(future.result());
     assertEquals(cause, future.cause());
+  }
+
+  @Test
+  public void testSetResultOnCompletedPromise() {
+    ArrayList<Promise<Object>> promises = new ArrayList<>();
+    promises.add(Promise.succeededPromise());
+    promises.add(Promise.succeededPromise());
+    promises.add(Promise.succeededPromise(new Object()));
+    promises.add(Promise.succeededPromise(new Object()));
+    promises.add(Promise.failedPromise(new Exception()));
+    promises.add(Promise.failedPromise(new Exception()));
+    for (Promise<Object> promise : promises) {
+      try {
+        promise.complete(new Object());
+        fail();
+      } catch (IllegalStateException ignore) {
+      }
+      assertFalse(promise.tryComplete(new Object()));
+      try {
+        promise.complete(null);
+        fail();
+      } catch (IllegalStateException ignore) {
+      }
+      assertFalse(promise.tryComplete(null));
+      try {
+        promise.fail(new Exception());
+        fail();
+      } catch (IllegalStateException ignore) {
+      }
+      assertFalse(promise.tryFail(new Exception()));
+    }
   }
 
   @Test

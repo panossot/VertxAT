@@ -24,6 +24,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.MultiMap;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.FrameType;
@@ -1029,35 +1030,56 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
+  // Test if websocket compression is enabled by checking that the switch protocols response header contains the requested compression
+  public void testWSPermessageDeflateCompressionEnabled() throws Exception {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      assertEquals("upgrade", ws.headers().get("Connection"));
+      assertEquals("permessage-deflate", ws.headers().get("sec-websocket-extensions"));
+      ws.close();
+    });
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(ar -> {
+
+      HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
+        assertEquals(101, resp.statusCode());
+        assertEquals("permessage-deflate", resp.headers().get("sec-websocket-extensions"));
+        resp.endHandler(v1 -> {
+          testComplete();
+        });
+      }))
+        .putHeader("origin", DEFAULT_HTTP_HOST)
+        .putHeader("Upgrade", "Websocket")
+        .putHeader("Connection", "upgrade")
+        .putHeader("Sec-WebSocket-Extensions", "permessage-deflate");
+
+      req.end();
+    }));
+    await();
+  }
+
+  @Test
   // Test server accepting no compression
-  public void testConnectWithWebsocketComressionDisabled() throws Exception {
-	  String path = "/some/path";
-	  Buffer buff = Buffer.buffer("AAA");
+  public void testConnectWithWebSocketCompressionDisabled() throws Exception {
+    String path = "/some/path";
+    Buffer buff = Buffer.buffer("AAA");
 
-	  // Server should have basic compression enabled by default,
-	  // client needs to ask for it
-	  server = vertx.createHttpServer(new HttpServerOptions()
-			  .setPort(DEFAULT_HTTP_PORT)
-			  .setPerFrameWebsocketCompressionSupported(false)
-			  .setPerMessageWebsocketCompressionSupported(false)
-			  ).websocketHandler(ws -> {
+    // Server should have basic compression enabled by default,
+    // client needs to ask for it
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setPerFrameWebsocketCompressionSupported(false)
+      .setPerMessageWebsocketCompressionSupported(false)
+    ).websocketHandler(ws -> {
+      assertEquals("upgrade", ws.headers().get("Connection"));
+      assertNull(ws.headers().get("sec-websocket-extensions"));
+      ws.writeFrame(WebSocketFrame.binaryFrame(buff,  true));
+    });
 
-		  assertEquals("upgrade", ws.headers().get("Connection"));
-		  assertNull(ws.headers().get("sec-websocket-extensions"));
-
-		  ws.writeFrame(WebSocketFrame.binaryFrame(buff,  true));
-	  });
-
-
-	  server.listen(ar -> {
-		  assertTrue(ar.succeeded());
-
-		  HttpClientOptions options = new HttpClientOptions();
-
-	      client = vertx.createHttpClient(options);
-
-		  client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, onSuccess(ws -> {
-
+    server.listen(onSuccess(s -> {
+      HttpClientOptions options = new HttpClientOptions();
+      client = vertx.createHttpClient(options);
+      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, onSuccess(ws -> {
         final Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);
@@ -1068,8 +1090,8 @@ public class WebSocketTest extends VertxTestBase {
           }
         });
       }));
-	  });
-	  await();
+    }));
+    await();
   }
 
   private void testValidSubProtocol(WebsocketVersion version) throws Exception {
@@ -1289,8 +1311,8 @@ public class WebSocketTest extends VertxTestBase {
   public void testAsyncAccept() {
     AtomicBoolean resolved = new AtomicBoolean();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
-      Promise<Integer> fut = Promise.promise();
-      ws.setHandshake(fut);
+      Promise<Integer> promise = Promise.promise();
+      ws.setHandshake(promise.future());
       try {
         ws.accept();
         fail();
@@ -1305,7 +1327,7 @@ public class WebSocketTest extends VertxTestBase {
       }
       vertx.setTimer(500, id -> {
         resolved.set(true);
-        fut.complete(101);
+        promise.complete(101);
       });
     });
     server.listen(onSuccess(s -> {
@@ -1321,10 +1343,10 @@ public class WebSocketTest extends VertxTestBase {
   public void testCloseAsyncPending() {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
       Promise<Integer> promise = Promise.promise();
-      ws.setHandshake(promise);
+      Future<Integer> result = ws.setHandshake(promise.future());
       ws.close();
-      assertTrue(promise.future().isComplete());
-      assertEquals(101, (int)promise.future().result());
+//      assertTrue(result.isComplete());
+//      assertEquals(101, (int)result.result());
     });
     server.listen(onSuccess(s -> {
       client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", onSuccess(ws -> {
@@ -1744,6 +1766,34 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testReceiveHttpResponseHeadersOnClient() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
+      handshakeWithCookie(req);
+    });
+    AtomicReference<WebSocket> websocketRef = new AtomicReference();
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/some/path", onSuccess(ws -> {
+        MultiMap entries = ws.headers();
+        assertNotNull(entries);
+        assertFalse(entries.isEmpty());
+        assertEquals("websocket".toLowerCase(), entries.get("Upgrade").toLowerCase());
+        assertEquals("upgrade".toLowerCase(), entries.get("Connection").toLowerCase());
+        Set<String> cookiesToSet = new HashSet(entries.getAll("Set-Cookie"));
+        assertEquals(2, cookiesToSet.size());
+        assertTrue(cookiesToSet.contains("SERVERID=test-server-id"));
+        assertTrue(cookiesToSet.contains("JSONID=test-json-id"));
+        websocketRef.set(ws);
+        vertx.runOnContext(v -> {
+          assertNull(ws.headers());
+          testComplete();
+        });
+      }));
+    });
+    await();
+  }
+
+  @Test
   public void testUpgrade() {
     testUpgrade(false);
   }
@@ -1821,7 +1871,7 @@ public class WebSocketTest extends VertxTestBase {
   public void testInvalidUnmaskedFrameRequest(){
 
     client = vertx.createHttpClient(new HttpClientOptions().setSendUnmaskedFrames(true));
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setAcceptUnmaskedFrames(false));
     server.requestHandler(req -> {
       req.response().setChunked(true).write("connect");
     });
@@ -1885,6 +1935,31 @@ public class WebSocketTest extends VertxTestBase {
       }
     });
     testRaceConditionWithWebsocketClient(fut.get());
+  }
+
+  private NetSocket handshakeWithCookie(HttpServerRequest req) {
+    NetSocket so = req.netSocket();
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-1");
+      byte[] inputBytes = (req.getHeader("Sec-WebSocket-Key") + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").getBytes();
+      digest.update(inputBytes);
+      byte[] hashedBytes = digest.digest();
+      byte[] accept = Base64.getEncoder().encode(hashedBytes);
+      Buffer data = Buffer.buffer();
+      data.appendString("HTTP/1.1 101 Switching Protocols\r\n");
+      data.appendString("Upgrade: websocket\r\n");
+      data.appendString("Connection: upgrade\r\n");
+      data.appendString("Sec-WebSocket-Accept: " + new String(accept) + "\r\n");
+      data.appendString("Set-Cookie: SERVERID=test-server-id\r\n");
+      data.appendString("Set-Cookie: JSONID=test-json-id\r\n");
+      data.appendString("\r\n");
+      so.write(data);
+      return so;
+    } catch (NoSuchAlgorithmException e) {
+      req.response().setStatusCode(500).end();
+      fail(e.getMessage());
+      return null;
+    }
   }
 
   private NetSocket handshake(HttpServerRequest req) {
@@ -2433,13 +2508,13 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testCloseStatusCodeFromServer() {
-    waitFor(2);
+    waitFor(3);
     testCloseStatusCodeFromServer(ServerWebSocket::close);
   }
 
   @Test
   public void testCloseStatusCodeFromServerWithHandler() {
-    waitFor(3);
+    waitFor(4);
     testCloseStatusCodeFromServer(ws -> ws.close(onSuccess(v -> complete())));
   }
 
@@ -2458,6 +2533,10 @@ public class WebSocketTest extends VertxTestBase {
             assertEquals(1000, frame.binaryData().getByteBuf().getShort(0));
             assertEquals(1000, frame.closeStatusCode());
             assertNull(frame.closeReason());
+            complete();
+          });
+          ws.closeHandler(sc -> {
+            assertEquals((Short)(short)1000, ws.closeStatusCode());
             complete();
           });
         }));
@@ -2494,6 +2573,8 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .websocketHandler(socket -> {
         socket.closeHandler(a -> {
+          assertEquals((Short)(short)TEST_STATUS_CODE, socket.closeStatusCode());
+          assertEquals(TEST_REASON, socket.closeReason());
           complete();
         });
         socket.frameHandler(frame -> {
@@ -2533,6 +2614,8 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .websocketHandler(socket -> {
         socket.closeHandler(a -> {
+          assertEquals(null, socket.closeStatusCode());
+          assertEquals(null, socket.closeReason());
           complete();
         });
         vertx.setTimer(100, (ar) -> closeOp.accept(socket));
@@ -2586,10 +2669,12 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testCleanServerClose() {
+    short status = (short)(4000 + TestUtils.randomPositiveInt() % 100);
     waitFor(2);
     server = vertx.createHttpServer();
     server.websocketHandler(ws -> {
-      ws.closeHandler(v -> {
+      ws.closeHandler(sc -> {
+        assertEquals((Short)(short)status, ws.closeStatusCode());
         complete();
       });
     });
@@ -2599,7 +2684,6 @@ public class WebSocketTest extends VertxTestBase {
         NetSocketInternal so = (NetSocketInternal) res;
         so.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
         so.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));
-        int status = 4000 + TestUtils.randomPositiveInt() % 100;
         String reason = TestUtils.randomAlphaString(10);
         so.writeMessage(new CloseWebSocketFrame(status, reason));
         Deque<Object> received = new ArrayDeque<>();
