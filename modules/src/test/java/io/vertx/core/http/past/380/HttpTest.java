@@ -52,7 +52,7 @@ import static java.util.Collections.singletonList;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.0*3.8.2"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.0*3.8.3"})
 public abstract class HttpTest extends HttpTestBase {
 
   @Rule
@@ -2623,7 +2623,6 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
   public void testListenInvalidPort() throws Exception {
     /* Port 7 is free for use by any application in Windows, so this test fails. */
     Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
