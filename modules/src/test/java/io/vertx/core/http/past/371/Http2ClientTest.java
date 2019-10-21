@@ -75,7 +75,7 @@ import static io.vertx.test.core.TestUtils.*;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1*3.8.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1*3.8.2"})
 public class Http2ClientTest extends Http2TestBase {
 
   private List<EventLoopGroup> eventLoopGroups = new ArrayList<>();

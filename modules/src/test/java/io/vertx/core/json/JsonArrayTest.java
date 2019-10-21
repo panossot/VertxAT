@@ -30,7 +30,7 @@ import static org.junit.Assert.*;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0*3.8.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0*3.8.2"})
 public class JsonArrayTest {
 
   private JsonArray jsonArray;

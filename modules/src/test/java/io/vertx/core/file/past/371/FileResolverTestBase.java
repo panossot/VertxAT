@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0*3.8.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0*3.8.2"})
 public abstract class FileResolverTestBase extends VertxTestBase {
 
   private final String cacheBaseDir = new File(System.getProperty("java.io.tmpdir", ".") + File.separator + "vertx-cache").getAbsolutePath();

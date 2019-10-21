@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1*3.8.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.1*3.8.2"})
 public class WriteStreamTest extends AsyncTestBase {
 
   static class StreamBase<T> implements WriteStream<T> {

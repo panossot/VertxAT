@@ -52,7 +52,7 @@ import static java.util.Collections.singletonList;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.0*3.8.1"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.0*3.8.2"})
 public abstract class HttpTest extends HttpTestBase {
 
   @Rule
