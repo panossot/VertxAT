@@ -46,8 +46,9 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
+import org.jboss.eap.additional.testsuite.annotations.ATTest;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.8.3"})
 public class JsonParserTest {
 
   @Test
@@ -546,14 +547,9 @@ public class JsonParserTest {
     JsonParser parser = JsonParser.newParser();
     List<Object> values = new ArrayList<>();
     parser.objectValueMode();
-    parser.pause();
-    parser.handler(event -> values.add(event.mapTo(TheObject.class)));
-    parser.handle(Buffer.buffer("{\"f\":\"the-value-1\"}{\"f\":\"the-value-2\"}"));
-    assertEquals(Collections.emptyList(), values);
-    parser.fetch(1);
-    assertEquals(Collections.singletonList(new TheObject("the-value-1")), values);
-    parser.fetch(1);
-    assertEquals(Arrays.asList(new TheObject("the-value-1"), new TheObject("the-value-2")), values);
+    parser.handler(event ->   values.add(event.mapTo(TheObject.class)));
+    parser.handle(new JsonObject().put("f", "the-value").toBuffer());
+    assertEquals(Collections.singletonList(new TheObject("the-value")), values);
   }
 
   @Test
@@ -587,9 +583,7 @@ public class JsonParserTest {
       JsonParser parser = JsonParser.newParser();
       List<Object> values = new ArrayList<>();
       parser.arrayValueMode();
-      parser.handler(event -> {
-        values.add(event.mapTo(LinkedList.class));
-      });
+      parser.handler(event -> values.add(event.mapTo(LinkedList.class)));
       parser.handle(new JsonArray().add(0).add(1).add(2).toBuffer());
       assertEquals(Collections.singletonList(Arrays.asList(0L, 1L, 2L)), values);
       assertEquals(LinkedList.class, values.get(0).getClass());
@@ -603,9 +597,7 @@ public class JsonParserTest {
       assertEquals(Collections.emptyList(), values);
       assertEquals(1, errors.size());
       try {
-        JsonParser.newParser().arrayValueMode().handler(event -> {
-          values.add(event.mapTo(TheObject.class));
-        }).write(Buffer.buffer("[]")).end();
+        JsonParser.newParser().arrayValueMode().handler(event -> values.add(event.mapTo(TheObject.class))).write(Buffer.buffer("[]")).end();
         fail();
       } catch (DecodeException expected) {
       }
@@ -760,19 +752,6 @@ public class JsonParserTest {
   }
 
   @Test
-  public void testStreamFetchNames() {
-    FakeStream stream = new FakeStream();
-    JsonParser parser = JsonParser.newParser(stream);
-    List<JsonEvent> events = new ArrayList<>();
-    parser.handler(events::add);
-    parser.pause();
-    stream.handle("{\"foo\":\"bar\"}");
-    parser.fetch(3);
-    assertEquals(3, events.size());
-    assertTrue(stream.isPaused());
-  }
-
-  @Test
   public void testStreamPauseInHandler() {
     FakeStream stream = new FakeStream();
     JsonParser parser = JsonParser.newParser(stream);
@@ -803,7 +782,7 @@ public class JsonParserTest {
     assertFalse(stream.isPaused());
   }
 
-  @Test
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.3"})
   public void testStreamEnd() {
     FakeStream stream = new FakeStream();
     JsonParser parser = JsonParser.newParser(stream);
@@ -817,6 +796,19 @@ public class JsonParserTest {
     //regression check for #2790 - ensure that by accident resume method is not called.
     assertEquals(0, stream.pauseCount());
     assertEquals(0, stream.resumeCount());
+  }
+
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.6.2"})
+  public void testStreamEnd2() {
+    FakeStream stream = new FakeStream();
+    JsonParser parser = JsonParser.newParser(stream);
+    List<JsonEvent> events = new ArrayList<>();
+    parser.handler(events::add);
+    AtomicInteger ended = new AtomicInteger();
+    parser.endHandler(v -> ended.incrementAndGet());
+    stream.end();
+    assertEquals(0, events.size());
+    assertEquals(1, ended.get());
   }
 
   @Test

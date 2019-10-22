@@ -3381,7 +3381,6 @@ public class Http1xTest extends HttpTest {
     testCloseTheConnectionAfterResetBeforeResponseReceived(true);
   }
 
-  @Test
   public void testCloseTheConnectionAfterResetBeforeKeepAliveResponseReceived() throws Exception {
     testCloseTheConnectionAfterResetBeforeResponseReceived(false);
   }
