@@ -12,7 +12,7 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.*;
-import io.vertx.core.eventbus.impl.MessageConsumerImpl;
+import io.vertx.core.eventbus.impl.HandlerRegistration;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
@@ -40,7 +40,7 @@ import static io.vertx.test.core.TestUtils.*;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.1*3.8.3"})
 public class LocalEventBusTest extends EventBusTestBase {
 
   private EventBus eb;
@@ -1046,7 +1046,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     };
     MessageConsumer<String> reg = eb.<String>consumer(ADDRESS1).setMaxBufferedMessages(10);
     ReadStream<?> controller = register.apply(reg, handler);
-    ((MessageConsumerImpl<String>) reg).discardHandler(msg -> {
+    ((HandlerRegistration<String>) reg).discardHandler(msg -> {
       assertEquals(data[10], msg.body());
       expected.addAll(Arrays.asList(data).subList(0, 10));
       controller.resume();
@@ -1075,7 +1075,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     }
     List<String> received = Collections.synchronizedList(new ArrayList<>());
     CountDownLatch receiveLatch = new CountDownLatch(4);
-    MessageConsumerImpl<String> consumer = (MessageConsumerImpl<String>) eb.<String>consumer(ADDRESS1).setMaxBufferedMessages(5);
+    HandlerRegistration<String> consumer = (HandlerRegistration<String>) eb.<String>consumer(ADDRESS1).setMaxBufferedMessages(5);
     streamSupplier.apply(consumer, e -> {
       received.add(e);
       receiveLatch.countDown();
@@ -1108,7 +1108,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       // Let enough time of the 20 messages to go in the consumer pending queue
       vertx.setTimer(20, v -> {
         AtomicInteger count = new AtomicInteger(1);
-        ((MessageConsumerImpl<Integer>)consumer).discardHandler(discarded -> {
+        ((HandlerRegistration<Integer>)consumer).discardHandler(discarded -> {
           int val = discarded.body();
           assertEquals(count.getAndIncrement(), val);
           if (val == 9) {
@@ -1152,7 +1152,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     };
     MessageConsumer<String> reg = eb.<String>consumer(ADDRESS1).setMaxBufferedMessages(10);
     ReadStream<?> controller = register.apply(reg, handler);
-    ((MessageConsumerImpl<String>) reg).discardHandler(msg -> {
+    ((HandlerRegistration<String>) reg).discardHandler(msg -> {
       assertEquals(data[10], msg.body());
       expected.addAll(Arrays.asList(data).subList(0, 10));
       controller.resume();
@@ -1412,7 +1412,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       Context ctx = Vertx.currentContext();
       ctx.runOnContext(v -> {
         consumer.resume();
-        ((MessageConsumerImpl<?>) consumer).discardHandler(discarded -> {
+        ((HandlerRegistration<?>) consumer).discardHandler(discarded -> {
           assertEquals("val1", discarded.body());
           testComplete();
         });
