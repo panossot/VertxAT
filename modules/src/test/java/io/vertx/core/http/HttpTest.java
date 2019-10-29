@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -16,8 +16,8 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.*;
 import io.vertx.core.Future;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
@@ -633,6 +633,22 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testResponseEndHandlersConnectionClose() {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().endHandler(v -> complete());
+      req.response().end();
+    }).listen(onSuccess(server ->
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(res -> {
+        assertEquals(200, res.statusCode());
+        complete();
+      }))
+      .putHeader(HttpHeaders.CONNECTION, "close")
+      .end()));
+    await();
+  }
+
+  @Test
   public void testAbsoluteURI() {
     testURIAndPath("http://localhost:" + DEFAULT_HTTP_PORT + "/this/is/a/path/foo.html", "/this/is/a/path/foo.html");
   }
@@ -1016,7 +1032,6 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
   public void testRequestBodyStringDefaultEncodingAtEnd() {
     testRequestBodyStringAtEnd(null);
   }
@@ -1253,6 +1268,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Repeat(times = 10)
   @Test
   public void testClientExceptionHandlerCalledWhenServerTerminatesConnection() throws Exception {
     int numReqs = 10;
@@ -1264,9 +1280,7 @@ public abstract class HttpTest extends HttpTestBase {
       for (int i = 0; i < numReqs; i++) {
         client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {
           complete();
-        }))
-          .exceptionHandler(error -> fail("Exception handler should not be called"))
-          .end();
+        })).end();
       }
     }));
     await();
@@ -1355,6 +1369,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testServerExceptionHandlerOnClose() {
+    waitFor(3);
     vertx.createHttpServer().requestHandler(req -> {
       HttpServerResponse resp = req.response();
       AtomicInteger reqExceptionHandlerCount = new AtomicInteger();
@@ -1376,17 +1391,19 @@ public abstract class HttpTest extends HttpTestBase {
         assertEquals(0, reqExceptionHandlerCount.get());
         assertEquals(1, respExceptionHandlerCount.incrementAndGet());
         assertEquals(0, respEndHandlerCount.get());
+        complete();
       });
       resp.endHandler(v -> {
         assertEquals(0, reqExceptionHandlerCount.get());
         assertEquals(1, respExceptionHandlerCount.get());
         assertEquals(1, respEndHandlerCount.incrementAndGet());
+        complete();
       });
       req.connection().closeHandler(v -> {
         assertEquals(1, reqExceptionHandlerCount.get());
         assertEquals(1, respExceptionHandlerCount.get());
         assertEquals(1, respEndHandlerCount.get());
-        testComplete();
+        complete();
       });
     }).listen(testAddress, ar -> {
       HttpClient client = vertx.createHttpClient();
@@ -3693,7 +3710,6 @@ public abstract class HttpTest extends HttpTestBase {
     testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 308, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
   }
 
-  @Test
   public void testFollowRedirectPostOn308() throws Exception {
     testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 308, 308, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
@@ -5388,6 +5404,24 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testRemoveCookies() throws Exception {
+    testCookies("foo=bar", req -> {
+      Cookie removed = req.response().removeCookie("foo");
+      assertNotNull(removed);
+      assertEquals("foo", removed.getName());
+      assertEquals("bar", removed.getValue());
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      // the expired cookie must be sent back
+      assertEquals(1, cookies.size());
+      assertTrue(cookies.get(0).contains("foo=bar"));
+      assertTrue(cookies.get(0).contains("Max-Age=0"));
+      assertTrue(cookies.get(0).contains("Expires="));
+    });
+  }
+
+  @Test
   public void testNoCookiesRemoveCookie() throws Exception {
     testCookies(null, req -> {
       req.response().removeCookie("foo");
@@ -5444,6 +5478,41 @@ public abstract class HttpTest extends HttpTestBase {
         clientChecker.accept(resp);
         testComplete();
       })).putHeader(HttpHeaders.COOKIE.toString(), cookieHeader).end();
+    await();
+  }
+
+  @Test
+  public void testClientRequestFutureSetHandlerFromAnotherThread() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    client.close();
+    Context ctx = vertx.getOrCreateContext();
+    CompletableFuture<HttpClientRequest> reqFut = new CompletableFuture<>();
+    ctx.runOnContext(v -> {
+      client = vertx.createHttpClient(createBaseClientOptions());
+      HttpClientRequest req = client.request(
+        HttpMethod.GET,
+        testAddress,
+        new RequestOptions()
+          .setPort(DEFAULT_HTTP_PORT)
+          .setHost(DEFAULT_HTTP_HOST)
+          .setURI(DEFAULT_TEST_URI), onSuccess(resp -> {
+          complete();
+        }));
+      reqFut.complete(req);
+    });
+    HttpClientRequest req = reqFut.get(10, TimeUnit.SECONDS);
+    Future<Void> endFut = req.end("msg");
+    waitUntil(endFut::succeeded);
+    // Set the handler after the future
+    endFut.setHandler(onSuccess(v -> {
+      assertNotNull(Vertx.currentContext());
+      assertSameEventLoop(ctx, Vertx.currentContext());
+      complete();
+    }));
     await();
   }
 }

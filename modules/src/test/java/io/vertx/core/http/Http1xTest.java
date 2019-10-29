@@ -1989,7 +1989,6 @@ public class Http1xTest extends HttpTest {
 
   }
 
-  @Test
   public void testRequestExceptionHandlerContext() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
@@ -2073,43 +2072,45 @@ public class Http1xTest extends HttpTest {
     awaitLatch(latch);
     CountDownLatch latch2 = new CountDownLatch(1);
     int numConns = 4;
-    // There should be a context per *connection*
+    // There should be a context per request
     Set<Context> contexts = new ConcurrentHashSet<>();
     Set<Thread> threads = new ConcurrentHashSet<>();
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(numConns));
     Context clientCtx = vertx.getOrCreateContext();
+    clientCtx.runOnContext(v -> {
+      client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(numConns));
+    });
+    waitUntil(() -> client != null);
     for (int i = 0; i < numReqs; i++) {
       int val = i;
       CompletableFuture<Void> cf = new CompletableFuture<>();
       String path = "/" + val;
       requestResumeMap.put(path, cf);
-      HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, onSuccess(resp -> {
-        assertSameEventLoop(clientCtx, Vertx.currentContext());
-        assertEquals(200, resp.statusCode());
-        contexts.add(Vertx.currentContext());
-        threads.add(Thread.currentThread());
-        resp.pause();
-        responseResumeMap.get(path).thenAccept(v -> resp.resume());
-        resp.handler(chunk -> {
-          assertSameEventLoop(clientCtx, Vertx.currentContext());
-        });
-        resp.exceptionHandler(this::fail);
-        resp.endHandler(v -> {
-          assertSameEventLoop(clientCtx, Vertx.currentContext());
-          if (cnt.incrementAndGet() == numReqs) {
-            assertEquals(numReqs, contexts.size());
-            assertEquals(1, threads.size());
-            latch2.countDown();
-          }
-        });
-      })).setChunked(true).exceptionHandler(this::fail);
-      CountDownLatch drainLatch = new CountDownLatch(1);
-      req.drainHandler(v -> {
-        assertSameEventLoop(clientCtx, Vertx.currentContext());
-        drainLatch.countDown();
-      });
       clientCtx.runOnContext(v -> {
+        HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, onSuccess(resp -> {
+          assertSameEventLoop(clientCtx, Vertx.currentContext());
+          assertEquals(200, resp.statusCode());
+          contexts.add(Vertx.currentContext());
+          threads.add(Thread.currentThread());
+          resp.pause();
+          responseResumeMap.get(path).thenAccept(v2 -> resp.resume());
+          resp.handler(chunk -> {
+            assertSameEventLoop(clientCtx, Vertx.currentContext());
+          });
+          resp.exceptionHandler(this::fail);
+          resp.endHandler(v2 -> {
+            assertSameEventLoop(clientCtx, Vertx.currentContext());
+            if (cnt.incrementAndGet() == numReqs) {
+              assertEquals(4, contexts.size());
+              assertEquals(1, threads.size());
+              latch2.countDown();
+            }
+          });
+        })).setChunked(true).exceptionHandler(this::fail);
+        req.drainHandler(v2 -> {
+          assertSameEventLoop(clientCtx, Vertx.currentContext());
+          req.end();
+        });
         req.sendHead(version -> {
           assertSameEventLoop(clientCtx, Vertx.currentContext());
           fill(data, req, () -> {
@@ -2117,8 +2118,6 @@ public class Http1xTest extends HttpTest {
           });
         });
       });
-      awaitLatch(drainLatch);
-      req.end();
     }
     awaitLatch(latch2, 40, TimeUnit.SECONDS);
     // Close should be in own context
