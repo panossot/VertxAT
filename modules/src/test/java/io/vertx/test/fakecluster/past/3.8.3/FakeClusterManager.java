@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -12,6 +12,7 @@
 package io.vertx.test.fakecluster;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -43,7 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.8.3"})
 public class FakeClusterManager implements ClusterManager {
 
   private static Map<String, FakeClusterManager> nodes = Collections.synchronizedMap(new LinkedHashMap<>());
@@ -126,12 +127,11 @@ public class FakeClusterManager implements ClusterManager {
     vertx.runOnContext(v -> resultHandler.handle(Future.succeededFuture(new FakeAsyncMultiMap<>(theMap))));
   }
 
-  @SuppressWarnings("unchecked")
   @Override
-  public <K, V> Future<AsyncMap<K, V>> getAsyncMap(String name) {
+  @SuppressWarnings("unchecked")
+  public <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
     LocalAsyncMapImpl<K, V> asyncMap = asyncMaps.computeIfAbsent(name, n -> new LocalAsyncMapImpl(vertx));
-    ContextInternal context = vertx.getOrCreateContext();
-    return context.succeededFuture(asyncMap);
+    vertx.runOnContext(v -> resultHandler.handle(Future.succeededFuture(asyncMap)));
   }
 
   @Override
@@ -150,20 +150,20 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public Future<Lock> getLockWithTimeout(String name, long timeout) {
-    return localAsyncLocks.acquire(vertx.getOrCreateContext(), name, timeout);
+  public void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
+    localAsyncLocks.acquire(vertx.getOrCreateContext(), name, timeout, resultHandler);
   }
 
   @Override
-  public Future<Counter> getCounter(String name) {
+  public void getCounter(String name, Handler<AsyncResult<Counter>> resultHandler) {
     AtomicLong counter = new AtomicLong();
     AtomicLong prev = counters.putIfAbsent(name, counter);
     if (prev != null) {
       counter = prev;
     }
     AtomicLong theCounter = counter;
-    ContextInternal context = vertx.getOrCreateContext();
-    return context.succeededFuture(new AsynchronousCounter(vertx, theCounter));
+    Context context = vertx.getOrCreateContext();
+    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(new AsynchronousCounter(vertx, theCounter))));
   }
 
   @Override
