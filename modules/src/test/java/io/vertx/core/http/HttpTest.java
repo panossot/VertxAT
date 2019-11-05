@@ -1032,6 +1032,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
   public void testRequestBodyStringDefaultEncodingAtEnd() {
     testRequestBodyStringAtEnd(null);
   }
@@ -3710,6 +3711,7 @@ public abstract class HttpTest extends HttpTestBase {
     testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 308, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
   }
 
+  @Test
   public void testFollowRedirectPostOn308() throws Exception {
     testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 308, 308, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
   }
@@ -4119,7 +4121,7 @@ public abstract class HttpTest extends HttpTestBase {
       public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
       public HttpClientRequest setStreamPriority(StreamPriority streamPriority) { return this; }
       public StreamPriority getStreamPriority() { return null; }
-      public HttpClientRequest setHandler(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest onComplete(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }
       public boolean isComplete() { throw new UnsupportedOperationException(); }
       public Handler<AsyncResult<HttpClientResponse>> getHandler() { throw new UnsupportedOperationException(); }
       public boolean tryComplete(HttpClientResponse result) { throw new UnsupportedOperationException(); }
@@ -5487,7 +5489,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().end();
     });
-    startServer();
+    startServer(testAddress);
     client.close();
     Context ctx = vertx.getOrCreateContext();
     CompletableFuture<HttpClientRequest> reqFut = new CompletableFuture<>();

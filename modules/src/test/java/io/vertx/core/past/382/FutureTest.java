@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2014 Red Hat, Inc. and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,7 +11,6 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -21,9 +20,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,7 +32,7 @@ import java.util.function.Function;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.2*3.8.3"})
 public class FutureTest extends VertxTestBase {
 
   @Test
@@ -813,7 +809,7 @@ public class FutureTest extends VertxTestBase {
       T result;
       Throwable cause;
       public boolean isComplete() { throw new UnsupportedOperationException(); }
-      public Future<T> onComplete(Handler<AsyncResult<T>> handler) { throw new UnsupportedOperationException(); }
+      public Future<T> setHandler(Handler<AsyncResult<T>> handler) { throw new UnsupportedOperationException(); }
       public Handler<AsyncResult<T>> getHandler() { throw new UnsupportedOperationException(); }
 
       public void complete(T result) {
@@ -1233,81 +1229,6 @@ public class FutureTest extends VertxTestBase {
     assertNull(handlerField.get(f));
   }
 
-  @Test
-  public void testSetNullHandler() throws Exception {
-    Promise<String> promise = Promise.promise();
-    try {
-      promise.future().setHandler(null);
-      fail();
-    } catch (NullPointerException ignore) {
-    }
-    promise.complete();
-    try {
-      promise.future().setHandler(null);
-      fail();
-    } catch (NullPointerException ignore) {
-    }
-  }
-
-  @Test
-  public void testSucceedOnContext() throws Exception {
-    waitFor(4);
-    Object result = new Object();
-    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
-    CompletableFuture<Thread> latch = new CompletableFuture<>();
-    ctx.runOnContext(v -> {
-      latch.complete(Thread.currentThread());
-    });
-    Thread elThread = latch.get(10, TimeUnit.SECONDS);
-
-    //
-    CountDownLatch latch1 = new CountDownLatch(1);
-    Promise<Object> promise1 = ctx.promise();
-    vertx.runOnContext(v -> {
-      promise1.complete(result);
-      latch1.countDown();
-    });
-    awaitLatch(latch1);
-    promise1.future().setHandler(ar -> {
-      assertSame(elThread, Thread.currentThread());
-      assertTrue(ar.succeeded());
-      assertSame(result, ar.result());
-      complete();
-    });
-
-    //
-    Promise<Object> promise2 = ctx.promise();
-    promise2.future().setHandler(ar -> {
-      assertSame(elThread, Thread.currentThread());
-      assertTrue(ar.succeeded());
-      assertSame(result, ar.result());
-      complete();
-    });
-    vertx.runOnContext(v -> promise2.complete(result));
-
-    //
-    Promise<Object> promise3 = ctx.promise();
-    promise3.complete(result);
-    promise3.future().setHandler(ar -> {
-      assertSame(elThread, Thread.currentThread());
-      assertTrue(ar.succeeded());
-      assertSame(result, ar.result());
-      complete();
-    });
-
-    //
-    Promise<Object> promise4 = ctx.promise();
-    promise4.future().setHandler(ar -> {
-      assertSame(elThread, Thread.currentThread());
-      assertTrue(ar.succeeded());
-      assertSame(result, ar.result());
-      complete();
-    });
-    promise4.complete(result);
-
-    await();
-  }
-
   private void testOtherwiseEmpty(AsyncResult<String> res, Promise<String> p) {
     AsyncResult<String> otherwise = res.otherwiseEmpty();
     Throwable cause = new Throwable("the-failure");
@@ -1340,91 +1261,5 @@ public class FutureTest extends VertxTestBase {
         return fut.failed();
       }
     };
-  }
-
-  @Test
-  public void testSeveralHandlers1() {
-    waitFor(2);
-    Promise<String> promise = Promise.promise();
-    Future<String> fut = promise.future();
-    fut.setHandler(ar -> {
-      complete();
-    });
-    fut.setHandler(ar -> {
-      complete();
-    });
-    promise.complete();
-    await();
-  }
-
-  @Test
-  public void testSeveralHandlers2() {
-    waitFor(2);
-    Promise<String> promise = Promise.promise();
-    promise.complete();
-    Future<String> fut = promise.future();
-    fut.setHandler(ar -> {
-      complete();
-    });
-    fut.setHandler(ar -> {
-      complete();
-    });
-    await();
-  }
-
-  @Test
-  public void testSeveralHandlers3() {
-    waitFor(2);
-    Promise<String> promise = Promise.promise();
-    Future<String> fut = promise.future();
-    fut.setHandler(ar -> {
-      complete();
-    });
-    promise.complete();
-    fut.setHandler(ar -> {
-      complete();
-    });
-    await();
-  }
-
-  @Test
-  public void testSuccessNotification() {
-    waitFor(2);
-    Promise<String> promise = Promise.promise();
-    Future<String> fut = promise.future();
-    fut.onComplete(onSuccess(res -> {
-      assertEquals("foo", res);
-      complete();
-    }));
-    fut.onSuccess(res -> {
-      assertEquals("foo", res);
-      complete();
-    });
-    fut.onFailure(err -> {
-      fail();
-    });
-    promise.complete("foo");
-    await();
-  }
-
-  @Test
-  public void testFailureNotification() {
-    waitFor(2);
-    Promise<String> promise = Promise.promise();
-    Future<String> fut = promise.future();
-    Throwable failure = new Throwable();
-    fut.onComplete(onFailure(err -> {
-      assertEquals(failure, err);
-      complete();
-    }));
-    fut.onSuccess(res -> {
-      fail();
-    });
-    fut.onFailure(err -> {
-      assertEquals(failure, err);
-      complete();
-    });
-    promise.fail(failure);
-    await();
   }
 }
