@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2014 Red Hat, Inc. and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -22,6 +22,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -39,7 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*4.8.3"})
 public class EventLoopGroupTest extends VertxTestBase {
 
   @Test
@@ -68,14 +69,14 @@ public class EventLoopGroupTest extends VertxTestBase {
       @Override
       protected void initChannel(SocketChannel ch) throws Exception {
         assertSame(contextThread.get(), Thread.currentThread());
-        context.emitFromIO(v -> {
+        context.executeFromIO(v -> {
           assertSame(contextThread.get(), Thread.currentThread());
           assertSame(context, Vertx.currentContext());
           ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
             @Override
             public void channelActive(ChannelHandlerContext ctx) throws Exception {
               assertSame(contextThread.get(), Thread.currentThread());
-              context.emitFromIO(v -> {
+              context.executeFromIO(v -> {
                 assertSame(contextThread.get(), Thread.currentThread());
                 assertSame(context, Vertx.currentContext());
               });
@@ -85,7 +86,7 @@ public class EventLoopGroupTest extends VertxTestBase {
               ByteBuf buf = (ByteBuf) msg;
               assertEquals("hello", buf.toString(StandardCharsets.UTF_8));
               assertSame(contextThread.get(), Thread.currentThread());
-              context.emitFromIO(v -> {
+              context.executeFromIO(v -> {
                 assertSame(contextThread.get(), Thread.currentThread());
                 assertSame(context, Vertx.currentContext());
               });
@@ -93,7 +94,7 @@ public class EventLoopGroupTest extends VertxTestBase {
             @Override
             public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
               assertSame(contextThread.get(), Thread.currentThread());
-              context.emitFromIO(v -> {
+              context.executeFromIO(v -> {
                 assertSame(contextThread.get(), Thread.currentThread());
                 assertSame(context, Vertx.currentContext());
                 ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
@@ -102,7 +103,7 @@ public class EventLoopGroupTest extends VertxTestBase {
             @Override
             public void channelInactive(ChannelHandlerContext ctx) throws Exception {
               assertSame(contextThread.get(), Thread.currentThread());
-              context.emitFromIO(v -> {
+              context.executeFromIO(v -> {
                 assertSame(contextThread.get(), Thread.currentThread());
                 assertSame(context, Vertx.currentContext());
                 testComplete();
