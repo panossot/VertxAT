@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -26,7 +26,7 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.8.3"})
 public class VertxTest extends AsyncTestBase {
 
   @Test
@@ -53,15 +53,15 @@ public class VertxTest extends AsyncTestBase {
   }
 
   @Test
-  public void testCloseHookFailure1() {
+  public void testCloseHookFailure1() throws Exception {
     AtomicInteger closedCount = new AtomicInteger();
     class Hook implements Closeable {
       @Override
-      public void close(Promise<Void> completion) {
+      public void close(Handler<AsyncResult<Void>> completionHandler) {
         if (closedCount.incrementAndGet() == 1) {
           throw new RuntimeException();
         } else {
-          completion.handle(Future.succeededFuture());
+          completionHandler.handle(Future.succeededFuture());
         }
       }
     }
@@ -82,12 +82,12 @@ public class VertxTest extends AsyncTestBase {
     AtomicInteger closedCount = new AtomicInteger();
     class Hook implements Closeable {
       @Override
-      public void close(Promise<Void> completion) {
+      public void close(Handler<AsyncResult<Void>> completionHandler) {
         if (closedCount.incrementAndGet() == 1) {
-          completion.handle(Future.succeededFuture());
+          completionHandler.handle(Future.succeededFuture());
           throw new RuntimeException();
         } else {
-          completion.handle(Future.succeededFuture());
+          completionHandler.handle(Future.succeededFuture());
         }
       }
     }
