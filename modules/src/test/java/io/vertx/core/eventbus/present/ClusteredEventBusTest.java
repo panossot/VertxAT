@@ -53,6 +53,7 @@ import java.util.stream.IntStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
+import org.jboss.eap.additional.testsuite.annotations.ATTest;
 
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.1"})
 public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
@@ -451,7 +452,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     await();
   }
 
-  @Test
+  @ATTest({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.1*3.8.3"})
   public void testWriteHandlerLookupFailure() {
     Throwable cause = new Throwable();
     ClusterManager cm = new FakeClusterManager() {

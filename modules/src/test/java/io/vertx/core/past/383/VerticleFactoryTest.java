@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2014 Red Hat, Inc. and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,6 +11,7 @@
 
 package io.vertx.core;
 
+import io.vertx.core.*;
 import io.vertx.core.impl.Deployment;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
@@ -20,13 +21,12 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URLClassLoader;
-import java.util.concurrent.Callable;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.1*3.8.3"})
 public class VerticleFactoryTest extends VertxTestBase {
 
   public void setUp() throws Exception {
@@ -265,8 +265,8 @@ public class VerticleFactoryTest extends VertxTestBase {
         });
       }
       @Override
-      public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
-        promise.fail(new AssertionError("Should not be called"));
+      public Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception {
+        throw new AssertionError("Should not be called");
       }
     }; ;
     vertx.registerVerticleFactory(fact);
@@ -441,6 +441,55 @@ public class VerticleFactoryTest extends VertxTestBase {
   }
 
   @Test
+  public void testNotBlockingCreate() {
+    TestVerticle verticle1 = new TestVerticle();
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
+    vertx.registerVerticleFactory(fact1);
+    String name1 = "aa:myverticle1";
+    vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
+      assertTrue(ar.succeeded());
+      assertEquals(name1, fact1.identifier);
+      assertFalse(fact1.blockingCreate);
+      assertFalse(fact1.createWorkerThread);
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testBlockingCreate() {
+    TestVerticle verticle1 = new TestVerticle();
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
+    fact1.blockingCreate = true;
+    vertx.registerVerticleFactory(fact1);
+    String name1 = "aa:myverticle1";
+    vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
+      assertTrue(ar.succeeded());
+      assertEquals(name1, fact1.identifier);
+      assertTrue(fact1.blockingCreate);
+      assertTrue(fact1.createWorkerThread);
+      assertTrue(fact1.createContext.isEventLoopContext());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testBlockingCreateFailureInCreate() {
+    TestVerticle verticle1 = new TestVerticle();
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
+    fact1.blockingCreate = true;
+    fact1.failInCreate = true;
+    vertx.registerVerticleFactory(fact1);
+    String name1 = "aa:myverticle1";
+    vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
+      assertFalse(ar.succeeded());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
   public void testDeploymentOnClosedVertxWithCompletionHandler() {
     TestVerticle verticle = new TestVerticle();
     vertx.close(done -> {
@@ -479,6 +528,7 @@ public class VerticleFactoryTest extends VertxTestBase {
     boolean failInResolve;
     Context createContext;
     boolean createWorkerThread;
+    boolean blockingCreate;
 
     TestVerticleFactory(String prefix) {
       this.prefix = prefix;
@@ -562,20 +612,24 @@ public class VerticleFactoryTest extends VertxTestBase {
 
 
     @Override
-    public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
+    public Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception {
       if (failInCreate) {
-        promise.fail(new ClassNotFoundException("whatever"));
-        return;
+        throw new ClassNotFoundException("whatever");
       }
       this.identifier = verticleName;
       this.createContext = Vertx.currentContext();
       this.createWorkerThread = Context.isOnWorkerThread();
-      promise.complete(() -> verticle);
+      return verticle;
     }
 
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public boolean blockingCreate() {
+      return blockingCreate;
     }
   }
 
