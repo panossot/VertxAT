@@ -71,7 +71,6 @@ import static io.vertx.test.core.TestUtils.*;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})

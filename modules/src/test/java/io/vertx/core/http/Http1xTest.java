@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -22,7 +22,6 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.Repeat;
@@ -1180,8 +1179,8 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
-  @Repeat(times = 10)
   @Test
+  @Repeat(times = 10)
   public void testCloseServerConnectionWithPendingMessages() throws Exception {
     int n = 5;
     server.requestHandler(req -> {
@@ -1246,6 +1245,85 @@ public class Http1xTest extends HttpTest {
       req.end();
     }
     closeFuture.complete(null);
+    await();
+  }
+
+  /**
+   * A test that stress HTTP server pipe-lining.
+   */
+  @Test
+  public void testPipelineStress() throws Exception {
+
+    // A client that will aggressively pipeline HTTP requests and close the connection abruptly after one second
+    class Client {
+      private final NetSocket so;
+      private StringBuilder received;
+      private int curr;
+      private int count;
+      private boolean closed;
+      Client(NetSocket so) {
+        this.so = so;
+      }
+      private void close() {
+        closed = true;
+      }
+      private void receiveChunk(Buffer chunk) {
+        received.append(chunk);
+        int c;
+        while ((c = received.indexOf("\r\n\r\n", curr)) != -1) {
+          curr = c + 4;
+          count++;
+        }
+        if (count == 16 && !closed) {
+          send();
+        }
+      }
+      private void send() {
+        received = new StringBuilder();
+        curr = 0;
+        count = 0;
+        for (int i = 0;i < 16;i++) {
+          so.write(Buffer.buffer("" +
+            "GET / HTTP/1.1\r\n" +
+            "content-length:0\r\n" +
+            "\r\n"));
+        }
+      }
+      void run() {
+        so.handler(this::receiveChunk);
+        so.closeHandler(v -> {
+          close();
+          complete();
+        });
+        send();
+        vertx.setTimer(1000, id -> {
+          so.close();
+        });
+      }
+    }
+
+    // We want to be aware of uncaught exceptions and fail the test when it happens
+    vertx.exceptionHandler(err -> {
+      fail(err);
+    });
+
+    server.requestHandler(req -> {
+      // Use runOnContext to allow pipelined requests to pile up in the server
+      // when we send a response right away it's nearly like no pipe-lining is occurring
+      Vertx.currentContext().runOnContext(v -> {
+        req.response().end("Hello World");
+      });
+    });
+    startServer(testAddress);
+    NetClient tcpClient = vertx.createNetClient(new NetClientOptions().setSoLinger(0));
+    int numConn = 32;
+    waitFor(numConn);
+    for (int i = 0;i < numConn;i++) {
+      tcpClient.connect(testAddress, onSuccess(so -> {
+        Client client = new Client(so);
+        client.run();
+      }));
+    }
     await();
   }
 
@@ -1996,16 +2074,18 @@ public class Http1xTest extends HttpTest {
     });
     startServer(testAddress);
     Context clientCtx = vertx.getOrCreateContext();
-    HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {
-      assertSameEventLoop(clientCtx, Vertx.currentContext());
-      complete();
-    }));
+    client.close();
     clientCtx.runOnContext(v -> {
+      client = vertx.createHttpClient(createBaseClientOptions());
+      HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {
+        assertSameEventLoop(clientCtx, Vertx.currentContext());
+        complete();
+      }));
+      req.exceptionHandler(err -> {
+        assertSameEventLoop(clientCtx, Vertx.currentContext());
+        complete();
+      });
       req.sendHead();
-    });
-    req.exceptionHandler(err -> {
-      assertSameEventLoop(clientCtx, Vertx.currentContext());
-      complete();
     });
     await();
   }
