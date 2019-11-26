@@ -4445,7 +4445,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   private TestLoggerFactory testLogging() throws Exception {
     return TestUtils.testLogging(() -> {
-   	  try {
+       try {
         server.requestHandler(req -> {
           req.response().end();
         });
@@ -4454,9 +4454,9 @@ public abstract class HttpTest extends HttpTestBase {
           testComplete();
         });
         await();
-   	  } catch (Exception e) {
-   	    throw new RuntimeException(e);
-   	  }
+       } catch (Exception e) {
+         throw new RuntimeException(e);
+       }
     });
   }
 
@@ -4823,7 +4823,7 @@ public abstract class HttpTest extends HttpTestBase {
       server.listen(testAddress, onSuccess(s -> {
         client.request(HttpMethod.CONNECT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
-          NetSocket socket = resp.netSocket();
+        })).netSocket(onSuccess(socket -> {
           socket.handler(buff -> {
             received.appendBuffer(buff);
             if (received.length() == buffer.length()) {
@@ -4835,8 +4835,87 @@ public abstract class HttpTest extends HttpTestBase {
             testComplete();
           });
           socket.write(buffer);
-        })).sendHead();
+        })).end();
       }));
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testClientNetSocketConnectSuccess() {
+    waitFor(3);
+
+    server.requestHandler(req -> {
+      req.response().headers().set("HTTP/1.1", "101 Upgrade");
+      NetSocket so = req.netSocket();
+      so.handler(buff -> {
+        if (buff.toString().equals("ping")) {
+          so.end(Buffer.buffer("pong"));
+        }
+      });
+      so.endHandler(v -> {
+        complete();
+      });
+    });
+
+    server.listen(testAddress, onSuccess(s -> {
+      HttpClientRequest req = client.request(HttpMethod.CONNECT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+        complete();
+      }));
+      req.netSocket(onSuccess(so -> {
+        Buffer received = Buffer.buffer();
+        so.handler(received::appendBuffer);
+        so.endHandler(v -> {
+          assertEquals("pong", received.toString());
+          complete();
+        });
+        so.write(Buffer.buffer("ping"));
+      }));
+      req.end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testClientNetSocketConnectReject() {
+    waitFor(2);
+
+    server.requestHandler(req -> {
+      req.response().setStatusCode(404).end();
+    });
+
+    server.listen(testAddress, onSuccess(s -> {
+      HttpClientRequest req = client.request(HttpMethod.CONNECT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+        assertEquals(404, resp.statusCode());
+        complete();
+      }));
+      req.netSocket(onFailure(err -> {
+        complete();
+      }));
+      req.end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testClientNetSocketConnectFailure() {
+    waitFor(2);
+
+    server.requestHandler(req -> {
+      req.connection().close();
+    });
+
+    server.listen(testAddress, onSuccess(s -> {
+      HttpClientRequest req = client.request(HttpMethod.CONNECT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {
+        complete();
+      }));
+      req.netSocket(onFailure(err -> {
+        complete();
+      }));
+      req.end();
     }));
 
     await();
@@ -4860,7 +4939,8 @@ public abstract class HttpTest extends HttpTestBase {
 
     server.listen(testAddress, onSuccess(s -> {
       HttpClientRequest req = client.request(HttpMethod.CONNECT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-        NetSocket so = resp.netSocket();
+      }));
+      req.netSocket(onSuccess(so -> {
         assertNotNull(so);
         so.handler(buff -> {
           // With HTTP/1.1 the buffer is received immediately but delivered asynchronously
@@ -4873,8 +4953,7 @@ public abstract class HttpTest extends HttpTestBase {
             so.resume();
           });
         }
-      }));
-      req.sendHead();
+      })).end();
     }));
 
     await();
@@ -4882,7 +4961,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testServerNetSocketCloseWithHandler() {
-    waitFor(2);
+    waitFor(3);
     server.requestHandler(req -> {
       NetSocket so = req.netSocket();
       so.close(onSuccess(v -> {
@@ -4891,19 +4970,20 @@ public abstract class HttpTest extends HttpTestBase {
     });
     server.listen(onSuccess(s -> {
       HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-        NetSocket so = resp.netSocket();
+        complete();
+      }));
+      req.netSocket(onSuccess(so -> {
         so.closeHandler(v -> {
           complete();
         });
-      }));
-      req.sendHead();
+      })).end();
     }));
     await();
   }
 
   @Test
   public void testClientNetSocketCloseWithHandler() {
-    waitFor(2);
+    waitFor(3);
     server.requestHandler(req -> {
       NetSocket so = req.netSocket();
       so.closeHandler(v -> {
@@ -4912,12 +4992,13 @@ public abstract class HttpTest extends HttpTestBase {
     });
     server.listen(onSuccess(s -> {
       HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-        NetSocket so = resp.netSocket();
+        complete();
+      }));
+      req.netSocket(onSuccess(so -> {
         so.close(onSuccess(v -> {
           complete();
         }));
-      }));
-      req.sendHead();
+      })).end();
     }));
     await();
   }

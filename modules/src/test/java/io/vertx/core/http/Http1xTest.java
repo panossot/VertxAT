@@ -1908,32 +1908,6 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testAccessNetSocket() throws Exception {
-    Buffer toSend = TestUtils.randomBuffer(1000);
-
-    server.requestHandler(req -> {
-      req.response().headers().set("HTTP/1.1", "101 Upgrade");
-      req.bodyHandler(data -> {
-        assertEquals(toSend, data);
-        req.response().end("somecontent");
-      });
-    });
-
-    server.listen(testAddress, onSuccess(s -> {
-      HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-        resp.endHandler(v -> {
-          assertNotNull(resp.netSocket());
-          testComplete();
-        });
-      }));
-      req.headers().set("content-length", String.valueOf(toSend.length()));
-      req.write(toSend);
-    }));
-
-    await();
-  }
-
-  @Test
   public void testRequestsTimeoutInQueue() {
 
     server.requestHandler(req -> {
@@ -2067,6 +2041,7 @@ public class Http1xTest extends HttpTest {
 
   }
 
+  @Test
   public void testRequestExceptionHandlerContext() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
@@ -3460,6 +3435,7 @@ public class Http1xTest extends HttpTest {
     testCloseTheConnectionAfterResetBeforeResponseReceived(true);
   }
 
+  @Test
   public void testCloseTheConnectionAfterResetBeforeKeepAliveResponseReceived() throws Exception {
     testCloseTheConnectionAfterResetBeforeResponseReceived(false);
   }
@@ -4208,18 +4184,6 @@ public class Http1xTest extends HttpTest {
     });
   }
 
-  @Test
-  public void testClientNetSocketCloseRemovesFromThePool() throws Exception {
-    testHttpClientResponseThrowsExceptionInHandler(null, (resp, latch) -> {
-      NetSocket socket = resp.netSocket();
-      socket.closeHandler(v -> {
-        latch.countDown();
-      });
-      socket.close();
-    });
-  }
-
-
   private void testHttpClientResponseThrowsExceptionInHandler(
     String chunk,
     BiConsumer<HttpClientResponse, CountDownLatch> handler) throws Exception {
@@ -4442,6 +4406,31 @@ public class Http1xTest extends HttpTest {
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
       testComplete();
     }).end();
+    await();
+  }
+
+  @Test
+  public void testPipeliningQueueDelayed() throws Exception {
+    waitFor(3);
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
+    HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      complete();
+    }).sendHead();
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      complete();
+    }).end();
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      complete();
+    }).end();
+    // Need to wait a little so requests 2 and 3 are appended to the first request
+    Thread.sleep(300);
+    // This will end request 1 and make requests 2 and 3 progress
+    req1.end();
     await();
   }
 
