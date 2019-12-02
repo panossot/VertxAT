@@ -3060,7 +3060,7 @@ public abstract class HttpTest extends HttpTestBase {
       req.headers().set("content-length", "" + (pro + contentStr + epi).length());
       req.headers().set("content-type", "multipart/form-data; boundary=" + boundary);
       if (abortClient) {
-        req.connectionHandler(conn -> {
+        client.connectionHandler(conn -> {
           vertx.setTimer(100, id -> {
             conn.close();
           });
@@ -3498,37 +3498,18 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testClientLocalConnectionHandler() throws Exception {
-    testClientConnectionHandler(true, false);
-  }
-
-  @Test
   public void testClientGlobalConnectionHandler() throws Exception {
-    testClientConnectionHandler(false, true);
-  }
-
-  @Test
-  public void testClientConnectionHandler() throws Exception {
-    testClientConnectionHandler(true, true);
-  }
-
-  private void testClientConnectionHandler(boolean local, boolean global) throws Exception {
     server.requestHandler(req -> {
       req.response().end();
     });
     startServer(testAddress);
     AtomicInteger status = new AtomicInteger();
     Handler<HttpConnection> handler = conn -> status.getAndIncrement();
-    if (global) {
-      client.connectionHandler(handler);
-    }
+    client.connectionHandler(handler);
     HttpClientRequest req = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-      assertEquals((local ? 1 : 0) + (global ? 1 : 0), status.getAndIncrement());
+      assertEquals(1, status.getAndIncrement());
       testComplete();
     });
-    if (local) {
-      req.connectionHandler(handler);
-    }
     req.end();
     await();
   }
@@ -3586,13 +3567,13 @@ public abstract class HttpTest extends HttpTestBase {
       req.connection().close();
     });
     startServer(testAddress);
-    client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(err -> {
-    }))
-      .connectionHandler(conn -> {
+    client.connectionHandler(conn -> {
       conn.closeHandler(v -> {
         testComplete();
       });
-    }).sendHead();
+    });
+    client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(err -> {
+    })).sendHead();
     await();
   }
 
@@ -4123,7 +4104,6 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) { throw new UnsupportedOperationException(); }
       public boolean reset(long code) { return false; }
       public HttpConnection connection() { throw new UnsupportedOperationException(); }
-      public HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
       public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
       public HttpClientRequest setStreamPriority(StreamPriority streamPriority) { return this; }
@@ -4414,10 +4394,9 @@ public abstract class HttpTest extends HttpTestBase {
       clientConn.get().close();
     });
     startServer();
+    client.connectionHandler(clientConn::set);
     client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(resp -> {
-    }))
-      .connectionHandler(clientConn::set)
-      .end();
+    })).end();
     await();
   }
 
@@ -4479,6 +4458,11 @@ public abstract class HttpTest extends HttpTestBase {
     AtomicInteger exceptionCount = new AtomicInteger();
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setTryUseCompression(true));
+    client.connectionHandler(conn -> {
+      conn.closeHandler(v -> {
+        complete();
+      });
+    });
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
       resp.exceptionHandler(err -> {
         if (exceptionCount.incrementAndGet() == 1) {
@@ -4491,11 +4475,7 @@ public abstract class HttpTest extends HttpTestBase {
           }
         }
       });
-    })).connectionHandler(conn -> {
-      conn.closeHandler(v -> {
-        complete();
-      });
-    }).end();
+    })).end();
 
     await();
 
@@ -5288,7 +5268,7 @@ public abstract class HttpTest extends HttpTestBase {
         .setURI(DEFAULT_TEST_URI), ar -> {
 
       }).setChunked(true);
-    req.connectionHandler(conn -> {
+    client.connectionHandler(conn -> {
       vertx.setTimer(100, id -> {
         req.reset();
       });

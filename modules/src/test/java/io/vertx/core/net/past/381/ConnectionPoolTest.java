@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -22,7 +22,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -31,7 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.1*3.8.3"})
 public class ConnectionPoolTest extends VertxTestBase {
 
   class FakeConnectionManager {
@@ -542,47 +541,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     req2.connect();
     assertWaitUntil(waiter1::isSuccess);
     assertWaitUntil(waiter2::isSuccess);
-    assertWaitUntil(mgr::closed);
-  }
-
-  @Test
-  public void testConnectionInitializer() {
-    AtomicReference<FakeConnection> ref = new AtomicReference<>();
-    FakeConnectionProvider connector = new FakeConnectionProvider() {
-      @Override
-      public void init(FakeConnection conn) {
-        ref.set(conn);
-      }
-    };
-    FakeConnectionManager mgr = new FakeConnectionManager(-1, 2, connector);
-    FakeWaiter waiter = new FakeWaiter();
-    mgr.getConnection(waiter);
-    FakeConnection req = connector.assertRequest();
-    req.connect();
-    waitUntil(() -> ref.get() != null);
-    waitUntil(waiter::isSuccess);
-  }
-
-  @Test
-  public void testCloseConnectionIniInitializer() {
-    AtomicInteger count = new AtomicInteger();
-    FakeConnectionProvider connector = new FakeConnectionProvider() {
-      @Override
-      public void init(FakeConnection conn) {
-        if (count.getAndIncrement() == 0) {
-          conn.close();
-        }
-      }
-    };
-    FakeConnectionManager mgr = new FakeConnectionManager(-1, 2, connector);
-    FakeWaiter waiter = new FakeWaiter();
-    mgr.getConnection(waiter);
-    FakeConnection req1 = connector.assertRequest();
-    req1.connect();
-    FakeConnection req2 = connector.assertRequest();
-    req2.connect();
-    assertWaitUntil(() -> count.get() == 2);
-    assertWaitUntil(waiter::isSuccess);
+    assertWaitUntil(() -> mgr.closed());
   }
 
   private void checkQueueMaxSize(int queueMaxSize, int poolMaxSize) {
@@ -969,10 +928,6 @@ public class ConnectionPoolTest extends VertxTestBase {
   }
 
   abstract class FakeConnectionProviderBase implements ConnectionProvider<FakeConnection> {
-
-    @Override
-    public void init(FakeConnection conn) {
-    }
 
     @Override
     public void close(FakeConnection conn) {
