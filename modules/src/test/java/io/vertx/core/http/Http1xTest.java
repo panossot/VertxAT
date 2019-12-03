@@ -2021,7 +2021,7 @@ public class Http1xTest extends HttpTest {
         // This should warn in the log (console) as we are called back on the connection context
         // and not on the context doing the request
         // checker.accept(req4);
-        assertEquals(1, contexts.stream().map(context -> ((ContextInternal)context).nettyEventLoop()).distinct().count());
+        assertEquals(2, contexts.stream().map(context -> ((ContextInternal)context).nettyEventLoop()).distinct().count());
         assertEquals(1, connections.size());
         assertSame(Vertx.currentContext(), ctx);
         testComplete();
@@ -2140,33 +2140,34 @@ public class Http1xTest extends HttpTest {
       CompletableFuture<Void> cf = new CompletableFuture<>();
       String path = "/" + i;
       requestResumeMap.put(path, cf);
-      clientCtx.runOnContext(v -> {
+      Context requestCtx = vertx.getOrCreateContext();
+      requestCtx.runOnContext(v -> {
         HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, onSuccess(resp -> {
-          assertSameEventLoop(clientCtx, Vertx.currentContext());
+          assertSameEventLoop(requestCtx, Vertx.currentContext());
           assertEquals(200, resp.statusCode());
           contexts.add(Vertx.currentContext());
           threads.add(Thread.currentThread());
           resp.pause();
           responseResumeMap.get(path).thenAccept(v2 -> resp.resume());
           resp.handler(chunk -> {
-            assertSameEventLoop(clientCtx, Vertx.currentContext());
+            assertSameEventLoop(requestCtx, Vertx.currentContext());
           });
           resp.exceptionHandler(this::fail);
           resp.endHandler(v2 -> {
-            assertSameEventLoop(clientCtx, Vertx.currentContext());
+            assertSameEventLoop(requestCtx, Vertx.currentContext());
             if (cnt.incrementAndGet() == numReqs) {
-              assertEquals(1, contexts.size());
-              assertEquals(1, threads.size());
+              assertEquals(4, contexts.size());
+              assertEquals(4, threads.size());
               latch2.countDown();
             }
           });
         })).setChunked(true).exceptionHandler(this::fail);
         req.drainHandler(v2 -> {
-          assertSameEventLoop(clientCtx, Vertx.currentContext());
+          assertSameEventLoop(requestCtx, Vertx.currentContext());
           req.end();
         });
         req.sendHead(version -> {
-          assertSameEventLoop(clientCtx, Vertx.currentContext());
+          assertSameEventLoop(requestCtx, Vertx.currentContext());
           fill(data, req, () -> {
             cf.complete(null);
           });
@@ -3400,7 +3401,6 @@ public class Http1xTest extends HttpTest {
         client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath",
           onSuccess(resp1 -> {
             resp1.handler(buff -> {
-              resp1.request().reset();
               // Since we pipeline we must be sure that the first request is closed before running a new one
               resp1.request().connection().closeHandler(v -> {
                 client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
@@ -3411,6 +3411,7 @@ public class Http1xTest extends HttpTest {
                   });
                 })).end();
               });
+              resp1.request().reset();
             });
           })).end();
       } else {
@@ -4432,9 +4433,10 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
-    HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+    HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
       complete();
-    }).sendHead();
+    });
+    req.sendHead();
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
       complete();
     }).end();
@@ -4444,7 +4446,7 @@ public class Http1xTest extends HttpTest {
     // Need to wait a little so requests 2 and 3 are appended to the first request
     Thread.sleep(300);
     // This will end request 1 and make requests 2 and 3 progress
-    req1.end();
+    req.end();
     await();
   }
 
