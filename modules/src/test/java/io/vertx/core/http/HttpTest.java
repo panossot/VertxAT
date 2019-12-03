@@ -2313,7 +2313,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-
+  @Test
   public void testConnectInvalidPort() {
     waitFor(2);
     client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> complete()))
@@ -2588,7 +2588,6 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Test
   public void testListenInvalidPort() throws Exception {
     /* Port 7 is free for use by any application in Windows, so this test fails. */
     Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));

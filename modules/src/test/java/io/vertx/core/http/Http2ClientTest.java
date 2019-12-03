@@ -662,10 +662,11 @@ public class Http2ClientTest extends Http2TestBase {
     Context ctx = vertx.getOrCreateContext();
     Handler<Throwable> resetHandler = err -> {
       assertOnIOContext(ctx);
-      assertTrue(err instanceof StreamResetException);
-      StreamResetException reset = (StreamResetException) err;
-      assertEquals(8, reset.getCode());
-      complete();
+      if (err instanceof StreamResetException) {
+        StreamResetException reset = (StreamResetException) err;
+        assertEquals(8, reset.getCode());
+        complete();
+      }
     };
     client.close();
     ctx.runOnContext(v -> {
@@ -1463,11 +1464,11 @@ public class Http2ClientTest extends Http2TestBase {
         testComplete();
       });
     }));
-    req.sendHead(version -> {
+    req.sendHead(onSuccess(version -> {
       assertEquals(0, status.getAndIncrement());
       assertSame(HttpVersion.HTTP_2, version);
       req.end();
-    });
+    }));
     await();
   }
 
@@ -1500,11 +1501,11 @@ public class Http2ClientTest extends Http2TestBase {
         testComplete();
       });
     }));
-    req.sendHead(version -> {
+    req.sendHead(onSuccess(version -> {
       assertSame(HttpVersion.HTTP_2, version);
       req.writeCustomFrame(10, 253, expectedSend);
       req.end();
-    });
+    }));
     await();
   }
 
