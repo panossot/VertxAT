@@ -253,7 +253,8 @@ public class Http2ServerTest extends Http2TestBase {
     waitFor(2);
     Context ctx = vertx.getOrCreateContext();
     server.connectionHandler(conn -> {
-      assertOnIOContext(ctx);
+      assertTrue(Context.isOnEventLoopThread());
+      assertSameEventLoop(vertx.getOrCreateContext(), ctx);
       complete();
     });
     server.requestHandler(req -> fail());
@@ -1060,7 +1061,7 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals("GET", headers.method().toString());
       assertEquals("https", headers.scheme().toString());
       assertEquals("/wibble", headers.path().toString());
-      assertEquals(null, headers.authority());
+      assertEquals("whatever.com", headers.authority().toString());
       assertEquals("foo_value", headers.get("foo").toString());
       assertEquals(Arrays.asList("bar_value_1", "bar_value_2"), headers.getAll("bar").stream().map(CharSequence::toString).collect(Collectors.toList()));
     });
@@ -1092,17 +1093,6 @@ public class Http2ServerTest extends Http2TestBase {
     });
   }
 
-  @Test
-  public void testPushPromiseOverrideAuthorityWithNull() throws Exception {
-    testPushPromise(GET("/").authority("whatever.com"), (resp, handler ) -> {
-      resp.push(HttpMethod.GET, null, "/wibble", handler);
-    }, headers -> {
-      assertEquals("GET", headers.method().toString());
-      assertEquals("https", headers.scheme().toString());
-      assertEquals("/wibble", headers.path().toString());
-      assertEquals(null, headers.authority());
-    });
-  }
 
   private void testPushPromise(Http2Headers requestHeaders,
                                BiConsumer<HttpServerResponse, Handler<AsyncResult<HttpServerResponse>>> pusher,
@@ -1110,7 +1100,7 @@ public class Http2ServerTest extends Http2TestBase {
     Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
       Handler<AsyncResult<HttpServerResponse>> handler = ar -> {
-        assertSame(ctx, Vertx.currentContext());
+        assertSameEventLoop(ctx, Vertx.currentContext());
         assertTrue(ar.succeeded());
         HttpServerResponse response = ar.result();
         response./*putHeader("content-type", "application/plain").*/end("the_content");
@@ -1204,7 +1194,7 @@ public class Http2ServerTest extends Http2TestBase {
         String path = "/wibble" + val;
         req.response().push(HttpMethod.GET, path, ar -> {
           assertTrue(ar.succeeded());
-          assertSame(ctx, Vertx.currentContext());
+          assertSameEventLoop(ctx, Vertx.currentContext());
           pushSent.add(path);
           vertx.setTimer(10, id -> {
             ar.result().end("wibble-" + val);
@@ -2803,22 +2793,6 @@ public class Http2ServerTest extends Http2TestBase {
         complete();
       });
     });
-    await();
-  }
-
-  @Test
-  public void testFallbackOnHttp1ForWorkerContext() throws Exception {
-    server.requestHandler(req -> {
-      assertEquals(HttpVersion.HTTP_1_1, req.version());
-      req.response().end();
-    });
-    startServer(createWorker());
-    client.close();
-    client = vertx.createHttpClient(clientOptions);
-    client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", onSuccess(resp -> {
-      assertEquals(HttpVersion.HTTP_1_1, resp.version());
-      testComplete();
-    })).end();
     await();
   }
 
