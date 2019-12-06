@@ -22,13 +22,15 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.impl.HeadersAdaptor;
+import io.vertx.core.http.impl.HttpClientImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.Pump;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -3317,6 +3319,56 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testWorkerServer() throws Exception {
+    int numReq = 5; // 5 == the HTTP/1 pool max size
+    waitFor(numReq);
+    CyclicBarrier barrier = new CyclicBarrier(numReq);
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicInteger connCount = new AtomicInteger();
+    vertx.deployVerticle(() -> new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        vertx.createHttpServer(createBaseServerOptions())
+          .requestHandler(req -> {
+            Context current = Vertx.currentContext();
+            assertTrue(current.isWorkerContext());
+            assertSameEventLoop(context, current);
+            try {
+              barrier.await(20, TimeUnit.SECONDS);
+            } catch (Exception e) {
+              fail(e);
+            }
+            req.response().end("pong");
+          }).connectionHandler(conn -> {
+          Context current = Vertx.currentContext();
+          assertTrue(Context.isOnEventLoopThread());
+          assertTrue(current.isWorkerContext());
+          assertSame(context, current);
+          connCount.incrementAndGet(); // No complete here as we may have 1 or 5 connections depending on the protocol
+        }).listen(testAddress)
+          .<Void>mapEmpty()
+          .onComplete(startPromise);
+      }
+    }, new DeploymentOptions().setWorker(true), onSuccess(id -> latch.countDown()));
+    awaitLatch(latch);
+    for (int i = 0;i < numReq;i++) {
+      client.request(
+        HttpMethod.GET,
+        testAddress,
+        new RequestOptions()
+          .setPort(DEFAULT_HTTP_PORT)
+          .setHost(DEFAULT_HTTP_HOST)
+          .setURI(DEFAULT_TEST_URI),
+        onSuccess(resp -> {
+          complete();
+        })
+      ).end();
+    }
+    await();
+    assertTrue(connCount.get() > 0);
+  }
+
+  @Test
   public void testMultipleServerClose() {
     this.server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     AtomicInteger times = new AtomicInteger();
@@ -4465,19 +4517,24 @@ public abstract class HttpTest extends HttpTestBase {
         complete();
       });
     });
-    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-      resp.exceptionHandler(err -> {
-        if (exceptionCount.incrementAndGet() == 1) {
-          if (err instanceof Http2Exception) {
-            complete();
-            // Connection is not closed for HTTP/2 only the streams so we need to force it
-            resp.request().connection().close();
-          } else if (err instanceof DecompressionException) {
-            complete();
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, ar -> {
+      if (ar.failed()) {
+        complete();
+      } else {
+        HttpClientResponse resp = ar.result();
+        resp.exceptionHandler(err -> {
+          if (exceptionCount.incrementAndGet() == 1) {
+            if (err instanceof Http2Exception) {
+              complete();
+              // Connection is not closed for HTTP/2 only the streams so we need to force it
+              resp.request().connection().close();
+            } else if (err instanceof DecompressionException) {
+              complete();
+            }
           }
-        }
-      });
-    })).end();
+        });
+      }
+    }).end();
 
     await();
 
@@ -5060,35 +5117,6 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  // This test check that ending an HttpClientRequest will not hold a lock when sending Netty messages
-  // holding suck lock might deadlock when the ChannelOutboundBuffer is full and becomes drained
-  // doing an HttpClientRequest reentrant during the drain
-  @Repeat(times = 30)
-  @Test
-  public void testClientRequestEndDeadlock() throws Exception {
-    server.requestHandler(req -> req.endHandler(v -> req.response().end()));
-    startServer(testAddress);
-    Context ctx = vertx.getOrCreateContext();
-    ctx.runOnContext(v1 -> {
-      HttpClientRequest request = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-        resp.endHandler(v2 -> {
-          testComplete();
-        });
-      }))
-        .setChunked(true);
-      new Thread(() -> {
-        Buffer s = randomBuffer(256);
-        while (!request.writeQueueFull()) {
-          request.write(s);
-        }
-        ctx.runOnContext(v2 -> {
-          request.end();
-        });
-      }).start();
-    });
-    await();
-  }
-
   @Test
   public void testServerResponseWriteSuccess() throws Exception {
     testServerResponseWriteSuccess((resp, handler) -> resp.write(TestUtils.randomBuffer(1024), handler));
@@ -5144,12 +5172,21 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientRequestWriteSuccess() throws Exception {
-    testClientRequestWriteSuccess((resp, handler) -> resp.write(TestUtils.randomBuffer(1024), handler));
+    testClientRequestWriteSuccess((req, handler) -> {
+      req.setChunked(true);
+      req.write(TestUtils.randomBuffer(1024), handler);
+      req.end();
+    });
   }
 
   @Test
-  public void testClientRequestEndSuccess() throws Exception {
-    testServerResponseWriteSuccess((resp, handler) -> resp.end(TestUtils.randomBuffer(1024), handler));
+  public void testClientRequestEnd1Success() throws Exception {
+    testClientRequestWriteSuccess((req, handler) -> req.end(TestUtils.randomBuffer(1024), handler));
+  }
+
+  @Test
+  public void testClientRequestEnd2Success() throws Exception {
+    testClientRequestWriteSuccess(HttpClientRequest::end);
   }
 
   private void testClientRequestWriteSuccess(BiConsumer<HttpClientRequest, Handler<AsyncResult<Void>>> op) throws Exception {
@@ -5158,7 +5195,7 @@ public abstract class HttpTest extends HttpTestBase {
     CompletableFuture<Void> fut = new CompletableFuture<>();
     server.requestHandler(req -> {
       fut.complete(null);
-      req.handler(v -> {
+      req.endHandler(v -> {
         HttpServerResponse resp = req.response();
         if (!resp.ended()) {
           resp.end();
@@ -5169,13 +5206,9 @@ public abstract class HttpTest extends HttpTestBase {
     HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
       complete();
     }));
-    req.setChunked(true);
-    req.sendHead();
-    fut.whenComplete((v1, err) -> {
-      op.accept(req, onSuccess(v2 -> {
-        complete();
-      }));
-    });
+    op.accept(req, onSuccess(v -> {
+      complete();
+    }));
     await();
   }
 
@@ -5586,6 +5619,39 @@ public abstract class HttpTest extends HttpTestBase {
       assertSameEventLoop(ctx, Vertx.currentContext());
       complete();
     }));
+    await();
+  }
+
+  @Test
+  public void testClientRequestWithLargeBodyInSmallChunks() throws Exception {
+    StringBuilder sb = new StringBuilder();
+    FakeStream<Buffer> src = new FakeStream<>();
+    src.pause();
+    int numChunks = 1024;
+    int chunkLength = 1024;
+    for (int i = 0;i < numChunks;i++) {
+      String chunk = randomAlphaString(chunkLength);
+      sb.append(chunk);
+      src.write(Buffer.buffer(chunk));
+    }
+    src.end();
+    String expected = sb.toString();
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.bodyHandler(body -> {
+        assertEquals(HttpMethod.PUT, req.method());
+        assertEquals(Buffer.buffer(expected), body);
+        complete();
+        req.response().end();
+      });
+    });
+    startServer();
+    HttpClientRequest stream = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+      assertEquals(200, resp.statusCode());
+      complete();
+    }));
+    stream.putHeader(HttpHeaders.CONTENT_LENGTH, "" + numChunks * chunkLength);
+    src.pipeTo(stream);
     await();
   }
 }
