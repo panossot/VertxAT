@@ -31,6 +31,7 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -2096,38 +2097,6 @@ public abstract class HttpTest extends HttpTestBase {
           req.drainHandler(v -> {
             assertFalse(req.writeQueueFull());
             testComplete();
-          });
-
-          // Tell the server to resume
-          resumeFuture.complete();
-        }
-      });
-    });
-
-    await();
-  }
-
-  @Test
-  public void testClientExceptionHandlerCalledWhenExceptionOnDrainHandler() {
-    pausingServer(resumeFuture -> {
-      HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
-      req.setChunked(true);
-      assertFalse(req.writeQueueFull());
-      req.setWriteQueueMaxSize(1000);
-      Buffer buff = TestUtils.randomBuffer(10000);
-      vertx.setPeriodic(1, id -> {
-        req.write(buff);
-        if (req.writeQueueFull()) {
-          vertx.cancelTimer(id);
-          RuntimeException cause = new RuntimeException("error");
-          req.exceptionHandler(err -> {
-            // Called a second times when testComplete is called and close the http client
-            if (err == cause) {
-              testComplete();
-            }
-          });
-          req.drainHandler(v -> {
-            throw cause;
           });
 
           // Tell the server to resume
