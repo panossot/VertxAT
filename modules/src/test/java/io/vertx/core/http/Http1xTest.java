@@ -343,10 +343,10 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setCompressionSupported(true));
     assertTrue(options.isCompressionSupported());
 
-    assertEquals(65536, options.getMaxWebsocketFrameSize());
+    assertEquals(65536, options.getMaxWebSocketFrameSize());
     rand = TestUtils.randomPositiveInt();
-    assertEquals(options, options.setMaxWebsocketFrameSize(rand));
-    assertEquals(rand, options.getMaxWebsocketFrameSize());
+    assertEquals(options, options.setMaxWebSocketFrameSize(rand));
+    assertEquals(rand, options.getMaxWebSocketFrameSize());
 
     assertEquals(80, options.getPort());
     assertEquals(options, options.setPort(1234));
@@ -359,12 +359,12 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setHost(randString));
     assertEquals(randString, options.getHost());
 
-    assertNull(options.getWebsocketSubProtocols());
-    assertEquals(options, options.setWebsocketSubProtocols("foo"));
-    assertEquals("foo", options.getWebsocketSubProtocols());
+    assertNull(options.getWebSocketSubProtocols());
+    assertEquals(options, options.setWebSocketSubProtocols(Collections.singletonList("foo")));
+    assertEquals(Collections.singletonList("foo"), options.getWebSocketSubProtocols());
 
     HttpServerOptions optionsCopy = new HttpServerOptions(options);
-    assertEquals(options.toJson(), optionsCopy.setWebsocketSubProtocols(new String(options.getWebsocketSubProtocols())).toJson());
+    assertEquals(options.toJson(), optionsCopy.setWebSocketSubProtocols(options.getWebSocketSubProtocols()).toJson());
 
     assertTrue(options.getEnabledCipherSuites().isEmpty());
     assertEquals(options, options.addEnabledCipherSuite("foo"));
@@ -753,8 +753,8 @@ public class Http1xTest extends HttpTest {
     String host = TestUtils.randomAlphaString(100);
     int acceptBacklog = TestUtils.randomPortInt();
     boolean compressionSupported = rand.nextBoolean();
-    int maxWebsocketFrameSize = TestUtils.randomPositiveInt();
-    String wsSubProtocol = TestUtils.randomAlphaString(10);
+    int maxWebSocketFrameSize = TestUtils.randomPositiveInt();
+    List<String> wsSubProtocols = Arrays.asList(TestUtils.randomAlphaString(10));
     boolean is100ContinueHandledAutomatically = rand.nextBoolean();
     int maxChunkSize = rand.nextInt(10000);
     Http2Settings initialSettings = randomHttp2Settings();
@@ -785,8 +785,8 @@ public class Http1xTest extends HttpTest {
     options.setHost(host);
     options.setAcceptBacklog(acceptBacklog);
     options.setCompressionSupported(compressionSupported);
-    options.setMaxWebsocketFrameSize(maxWebsocketFrameSize);
-    options.setWebsocketSubProtocols(wsSubProtocol);
+    options.setMaxWebSocketFrameSize(maxWebSocketFrameSize);
+    options.setWebSocketSubProtocols(wsSubProtocols);
     options.setHandle100ContinueAutomatically(is100ContinueHandledAutomatically);
     options.setMaxChunkSize(maxChunkSize);
     options.setUseAlpn(useAlpn);
@@ -820,8 +820,8 @@ public class Http1xTest extends HttpTest {
   public void testDefaultServerOptionsJson() {
     HttpServerOptions def = new HttpServerOptions();
     HttpServerOptions json = new HttpServerOptions(new JsonObject());
-    assertEquals(def.getMaxWebsocketFrameSize(), json.getMaxWebsocketFrameSize());
-    assertEquals(def.getWebsocketSubProtocols(), json.getWebsocketSubProtocols());
+    assertEquals(def.getMaxWebSocketFrameSize(), json.getMaxWebSocketFrameSize());
+    assertEquals(def.getWebSocketSubProtocols(), json.getWebSocketSubProtocols());
     assertEquals(def.isCompressionSupported(), json.isCompressionSupported());
     assertEquals(def.getCrlPaths(), json.getCrlPaths());
     assertEquals(def.getCrlValues(), json.getCrlValues());
@@ -874,8 +874,8 @@ public class Http1xTest extends HttpTest {
     String host = TestUtils.randomAlphaString(100);
     int acceptBacklog = TestUtils.randomPortInt();
     boolean compressionSupported = rand.nextBoolean();
-    int maxWebsocketFrameSize = TestUtils.randomPositiveInt();
-    String wsSubProtocol = TestUtils.randomAlphaString(10);
+    int maxWebSocketFrameSize = TestUtils.randomPositiveInt();
+    List<String> wsSubProtocols = Collections.singletonList(randomAlphaString(10));
     boolean is100ContinueHandledAutomatically = rand.nextBoolean();
     int maxChunkSize = rand.nextInt(10000);
     int maxInitialLineLength = rand.nextInt(10000);
@@ -909,8 +909,8 @@ public class Http1xTest extends HttpTest {
       .put("host", host)
       .put("acceptBacklog", acceptBacklog)
       .put("compressionSupported", compressionSupported)
-      .put("maxWebsocketFrameSize", maxWebsocketFrameSize)
-      .put("websocketSubProtocols", wsSubProtocol)
+      .put("maxWebSocketFrameSize", maxWebSocketFrameSize)
+      .put("webSocketSubProtocols", wsSubProtocols)
       .put("handle100ContinueAutomatically", is100ContinueHandledAutomatically)
       .put("maxChunkSize", maxChunkSize)
       .put("maxInitialLineLength", maxInitialLineLength)
@@ -956,8 +956,8 @@ public class Http1xTest extends HttpTest {
     assertEquals(host, options.getHost());
     assertEquals(acceptBacklog, options.getAcceptBacklog());
     assertEquals(compressionSupported, options.isCompressionSupported());
-    assertEquals(maxWebsocketFrameSize, options.getMaxWebsocketFrameSize());
-    assertEquals(wsSubProtocol, options.getWebsocketSubProtocols());
+    assertEquals(maxWebSocketFrameSize, options.getMaxWebSocketFrameSize());
+    assertEquals(wsSubProtocols, options.getWebSocketSubProtocols());
     assertEquals(is100ContinueHandledAutomatically, options.isHandle100ContinueAutomatically());
     assertEquals(maxChunkSize, options.getMaxChunkSize());
     assertEquals(maxInitialLineLength, options.getMaxInitialLineLength());
@@ -1592,10 +1592,10 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testServerWebsocketIdleTimeout() {
+  public void testServerWebSocketIdleTimeout() {
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
-    server.websocketHandler(ws -> {}).listen(ar -> {
+    server.webSocketHandler(ws -> {}).listen(ar -> {
       assertTrue(ar.succeeded());
       client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
         ws.closeHandler(v -> testComplete());
@@ -1606,10 +1606,10 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testClientWebsocketIdleTimeout() {
+  public void testClientWebSocketIdleTimeout() {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setIdleTimeout(1));
-    server.websocketHandler(ws -> {}).listen(ar -> {
+    server.webSocketHandler(ws -> {}).listen(ar -> {
       client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
         ws.closeHandler(v -> testComplete());
       }));
@@ -1983,63 +1983,6 @@ public class Http1xTest extends HttpTest {
       })).end();
     });
     await();
-  }
-
-  @Test
-  public void testClientContextWithKeepAlive() throws Exception {
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(true).setPipelining(false).setMaxPoolSize(1));
-    testClientContext();
-  }
-
-  @Test
-  public void testClientContextWithPipelining() throws Exception {
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));
-    testClientContext();
-  }
-
-  private void testClientContext() throws Exception {
-    server.requestHandler(req -> {
-      req.response().end();
-    });
-    startServer(testAddress);
-    Set<Context> contexts = Collections.synchronizedSet(new HashSet<>());
-    Set<HttpConnection> connections = Collections.synchronizedSet(new HashSet<>());
-    Handler<AsyncResult<HttpClientResponse>> checker = onSuccess(response -> {
-      Context current = Vertx.currentContext();
-      assertNotNull(current);
-      contexts.add(current);
-      connections.add(response.request().connection());
-    });
-    HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", checker)
-      .exceptionHandler(this::fail);
-    HttpClientRequest req2 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/3", checker).exceptionHandler(this::fail);
-    CompletableFuture<HttpClientRequest> fut = new CompletableFuture<>();
-    Context ctx = vertx.getOrCreateContext();
-    ctx.runOnContext(v -> {
-      HttpClientRequest req3 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/4", onSuccess(resp -> {
-        // This should warn in the log (console) as we are called back on the connection context
-        // and not on the context doing the request
-        // checker.accept(req4);
-        assertEquals(2, contexts.stream().map(context -> ((ContextInternal)context).nettyEventLoop()).distinct().count());
-        assertEquals(1, connections.size());
-        assertSame(Vertx.currentContext(), ctx);
-        testComplete();
-      }));
-      req3.exceptionHandler(this::fail);
-      fut.complete(req3);
-    });
-    HttpClientRequest req3 = fut.get(10, TimeUnit.SECONDS);
-    req1.end();
-    req2.end();
-    req3.end();
-    await();
-  }
-
-  @Test
-  public void testConnectErrorContext() throws Exception {
-
   }
 
   @Test
@@ -3216,20 +3159,22 @@ public class Http1xTest extends HttpTest {
       awaitLatch(listenLatch);
       client.close();
       client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
-      HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", ar -> {
-        // We may or not receive the response
-      });
       client.connectionHandler(conn -> {
         conn.closeHandler(v -> {
           complete();
         });
       });
-      req1.end();
-      HttpClientRequest req2 = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(resp -> {
-      }));
-      req2.sendHead();
-      doReset.thenAccept(v -> {
-        assertTrue(req2.reset());
+      vertx.runOnContext(v1 -> {
+        HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", ar -> {
+          // We may or not receive the response
+        });
+        req1.end();
+        HttpClientRequest req2 = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(resp -> {
+        }));
+        req2.sendHead();
+        doReset.thenAccept(v2 -> {
+          assertTrue(req2.reset());
+        });
       });
       await();
     } finally {
@@ -4299,15 +4244,18 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
-    for (int i = 0;i < numReq;i++) {
-      String expected = "" + i;
-      client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
-        resp.bodyHandler(body -> {
-          assertEquals(expected, body.toString());
-          complete();
-        });
-      })).end(Buffer.buffer(TestUtils.randomAlphaString(1024)));
-    }
+    vertx.runOnContext(v -> {
+      // Run on context so requests are enqueued with a predictable ordering
+      for (int i = 0;i < numReq;i++) {
+        String expected = "" + i;
+        client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
+          resp.bodyHandler(body -> {
+            assertEquals(expected, body.toString());
+            complete();
+          });
+        })).end(Buffer.buffer(TestUtils.randomAlphaString(1024)));
+      }
+    });
     await();
   }
 
@@ -4328,15 +4276,18 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
-    for (int i = 0;i < numReq;i++) {
-      String expected = "" + i;
-      client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
-        resp.bodyHandler(body -> {
-          assertEquals(expected, body.toString());
-          complete();
-        });
-      })).end(TestUtils.randomAlphaString(1024));
-    }
+    vertx.runOnContext(v -> {
+      // Run on context so requests are enqueued with a predictable ordering
+      for (int i = 0;i < numReq;i++) {
+        String expected = "" + i;
+        client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
+          resp.bodyHandler(body -> {
+            assertEquals(expected, body.toString());
+            complete();
+          });
+        })).end(TestUtils.randomAlphaString(1024));
+      }
+    });
     await();
   }
 
@@ -4344,7 +4295,7 @@ public class Http1xTest extends HttpTest {
   public void testPipelinedPostRequestStartedByResponseSent() throws Exception {
     String chunk1 = TestUtils.randomAlphaString(1024);
     String chunk2 = TestUtils.randomAlphaString(1024);
-    CountDownLatch latch = new CountDownLatch(1);
+    CountDownLatch latch2 = new CountDownLatch(1);
     AtomicInteger count = new AtomicInteger();
     server.requestHandler(req -> {
       switch (count.getAndIncrement()) {
@@ -4358,7 +4309,7 @@ public class Http1xTest extends HttpTest {
           });
           break;
         case 1:
-          latch.countDown();
+          latch2.countDown();
           req.bodyHandler(body -> {
             assertEquals(chunk1 + chunk2, body.toString());
             req.response().end();
@@ -4369,13 +4320,17 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
+    CountDownLatch latch1 = new CountDownLatch(1);
     client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
-    }).end(TestUtils.randomAlphaString(1024));
+    }).end(TestUtils.randomAlphaString(1024), onSuccess(v -> {
+      latch1.countDown();
+    }));
+    awaitLatch(latch1);
     HttpClientRequest req = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
       testComplete();
     }).setChunked(true);
     req.write(chunk1);
-    awaitLatch(latch);
+    awaitLatch(latch2);
     req.end(chunk2);
     await();
   }
