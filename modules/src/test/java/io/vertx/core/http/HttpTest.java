@@ -2559,6 +2559,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
   public void testListenInvalidPort() throws Exception {
     /* Port 7 is free for use by any application in Windows, so this test fails. */
     Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
@@ -3497,25 +3498,14 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testOtherMethodWithRawMethod() {
-    try {
-      client.request(HttpMethod.OTHER, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-      }).end();
-      fail();
-    } catch (IllegalStateException expected) {
-    }
-  }
-
-  @Test
   public void testOtherMethodRequest() {
     server.requestHandler(r -> {
-      assertEquals(HttpMethod.OTHER, r.method());
-      assertEquals("COPY", r.rawMethod());
+      assertEquals("COPY", r.method().name());
       r.response().end();
     }).listen(testAddress, onSuccess(s -> {
-      client.request(HttpMethod.OTHER, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
+      client.request(HttpMethod.valueOf("COPY"), testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
         testComplete();
-      })).setRawMethod("COPY").end();
+      })).end();
     }));
     await();
   }
@@ -3555,6 +3545,31 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress, serverCtx, server);
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
       testComplete();
+    }).end();
+    await();
+  }
+
+  @Test
+  public void testServerConnectionHandlerClose() throws Exception {
+    waitFor(2);
+    Context serverCtx = vertx.getOrCreateContext();
+    server.connectionHandler(conn -> {
+      conn.close();
+      conn.closeHandler(v -> {
+        complete();
+      });
+    });
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer(testAddress, serverCtx, server);
+    client.connectionHandler(conn -> {
+      conn.closeHandler(v -> {
+        complete();
+      });
+    });
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", ar -> {
+      System.out.println(ar.succeeded());
     }).end();
     await();
   }

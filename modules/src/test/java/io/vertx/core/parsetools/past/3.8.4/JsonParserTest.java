@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright 2017 Red Hat, Inc. and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -34,7 +35,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.*;
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.assertEquals;
@@ -47,7 +47,7 @@ import static org.junit.Assert.fail;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.4*3.8.4"})
 public class JsonParserTest {
 
   @Test
@@ -251,7 +251,7 @@ public class JsonParserTest {
   @Test
   public void testBinaryValue() {
     byte[] value = TestUtils.randomByteArray(10);
-    String encoded = BASE64_ENCODER.encodeToString(value);
+    String encoded = Base64.getEncoder().encodeToString(value);
     testValue('"' + encoded + '"', event -> {
       assertEquals(encoded, event.value());
       assertFalse(event.isArray());
