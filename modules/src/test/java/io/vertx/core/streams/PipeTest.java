@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,7 +11,6 @@
 package io.vertx.core.streams;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.fakestream.FakeStream;
@@ -230,7 +229,7 @@ public class PipeTest extends AsyncTestBase {
   @Test
   public void testEndWriteStreamSuccess() {
     Promise<Void> completion = Promise.promise();
-    dst.completion(completion.future());
+    dst.setEnd(completion.future());
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
     AtomicReference<AsyncResult<Void>> ended = new AtomicReference<>();
@@ -244,7 +243,7 @@ public class PipeTest extends AsyncTestBase {
   @Test
   public void testEndWriteStreamFail() {
     Promise<Void> completion = Promise.promise();
-    dst.completion(completion.future());
+    dst.setEnd(completion.future());
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
     AtomicReference<AsyncResult<Void>> ended = new AtomicReference<>();
