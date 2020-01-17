@@ -42,6 +42,7 @@
                     <useFile>false</useFile>
                     <failIfNoTests>false</failIfNoTests>
                     <runOrder>alphabetical</runOrder>
+                    <forkedProcessExitTimeoutInSeconds>2</forkedProcessExitTimeoutInSeconds>
                 </configuration>
 
 		<executions>
