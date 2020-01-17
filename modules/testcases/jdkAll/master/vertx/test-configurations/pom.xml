@@ -41,6 +41,7 @@
                     <disableXmlReport>true</disableXmlReport>
                     <useFile>false</useFile>
                     <failIfNoTests>false</failIfNoTests>
+                    <runOrder>alphabetical</runOrder>
                 </configuration>
 
 		<executions>
