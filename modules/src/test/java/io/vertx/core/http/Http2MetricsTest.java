@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -88,20 +88,21 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
     startServer();
     client = vertx.createHttpClient(createBaseClientOptions());
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
-    HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-    });
-    req.pushHandler(pushedReq -> {
-      HttpClientMetric metric = metrics.getMetric(pushedReq);
-      assertNotNull(metric);
-      assertSame(pushedReq, metric.request);
-      pushedReq.setHandler(onSuccess(resp -> {
-        resp.endHandler(v -> {
-          assertNull(metrics.getMetric(pushedReq));
-          complete();
-        });
-      }));
-    });
-    req.end();
+    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
+      .setHandler(resp -> {
+      })
+      .pushHandler(pushedReq -> {
+        HttpClientMetric metric = metrics.getMetric(pushedReq);
+        assertNotNull(metric);
+        assertSame(pushedReq, metric.request);
+        pushedReq.setHandler(onSuccess(resp -> {
+          resp.endHandler(v -> {
+            assertNull(metrics.getMetric(pushedReq));
+            complete();
+          });
+        }));
+      })
+      .end();
     await();
   }
 }

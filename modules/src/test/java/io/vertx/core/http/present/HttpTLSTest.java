@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -287,6 +287,17 @@ public abstract class HttpTLSTest extends HttpTestBase {
   // Specify some matching TLS protocols
   public void testTLSMatchingProtocolVersions() throws Exception {
     testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"}).pass();
+  }
+
+  @Test
+  // Provide an host name with a trailing dot
+  public void testTLSTrailingDotHost() throws Exception {
+    // We just need a vanilla cert for this test
+    SelfSignedCertificate cert = SelfSignedCertificate.create("host2.com");
+    TLSTest test = testTLS(Cert.NONE, cert::trustOptions, cert::keyCertOptions, Trust.NONE)
+      .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host2.com."))
+      .pass();
+    assertEquals("host2.com", TestUtils.cnOf(test.clientPeerCert()));
   }
 
   /*
@@ -673,7 +684,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   public void testSNIWithHostHeader() throws Exception {
     X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
-        .requestProvider((client, handler) -> client.post(4043, "localhost", "/somepath", handler).setHost("host2.com:4043"))
+        .requestProvider(client -> client.request(HttpMethod.POST, 4043, "localhost", "/somepath").setAuthority("host2.com:4043"))
         .pass()
         .clientPeerCert();
     assertEquals("host2.com", TestUtils.cnOf(cert));
@@ -850,6 +861,16 @@ public abstract class HttpTLSTest extends HttpTestBase {
         .pass();
   }
 
+  @Test
+  // Provide an host name with a trailing dot validated on the server with SNI
+  public void testSniWithTrailingDotHost() throws Exception {
+    TLSTest test = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
+      .serverSni()
+      .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host2.com."))
+      .pass();
+    assertEquals("host2.com", TestUtils.cnOf(test.clientPeerCert()));
+    assertEquals("host2.com", test.indicatedServerName);
+  }
 
   // Other tests
 
@@ -913,14 +934,14 @@ public abstract class HttpTLSTest extends HttpTestBase {
     private boolean followRedirects;
     private boolean serverSNI;
     private boolean clientForceSNI;
-    private BiFunction<HttpClient, Handler<AsyncResult<HttpClientResponse>>, HttpClientRequest> requestProvider = (client, handler) -> {
+    private Function<HttpClient, HttpClientRequest> requestProvider = client -> {
       String httpHost;
       if (connectHostname != null) {
         httpHost = connectHostname;
       } else {
         httpHost = DEFAULT_HTTP_HOST;
       }
-      return client.request(HttpMethod.POST, 4043, httpHost, DEFAULT_TEST_URI, handler);
+      return client.request(HttpMethod.POST, 4043, httpHost, DEFAULT_TEST_URI);
     };
     X509Certificate clientPeerCert;
     String indicatedServerName;
@@ -1034,11 +1055,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
     }
 
     TLSTest requestOptions(RequestOptions requestOptions) {
-      this.requestProvider = (client, handler) -> client.request(HttpMethod.POST, requestOptions, handler);
+      this.requestProvider = client -> client.request(requestOptions);
       return this;
     }
 
-    TLSTest requestProvider(BiFunction<HttpClient, Handler<AsyncResult<HttpClientResponse>>, HttpClientRequest> requestProvider) {
+    TLSTest requestProvider(Function<HttpClient, HttpClientRequest> requestProvider) {
       this.requestProvider = requestProvider;
       return this;
     }
@@ -1174,7 +1195,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         } else {
           httpHost = DEFAULT_HTTP_HOST;
         }
-        HttpClientRequest req = requestProvider.apply(client, ar2 -> {
+        HttpClientRequest req = requestProvider.apply(client).setHandler(ar2 -> {
           if (ar2.succeeded()) {
             HttpClientResponse response = ar2.result();
             HttpConnection conn = response.request().connection();
@@ -1201,6 +1222,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
           } else {
             Throwable t = ar.cause();
             if (shouldPass) {
+              t.printStackTrace();
               HttpTLSTest.this.fail("Should not throw exception");
             } else {
               complete();

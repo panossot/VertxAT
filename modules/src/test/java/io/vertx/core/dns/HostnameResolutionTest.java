@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -18,7 +18,6 @@ import io.netty.channel.ChannelInitializer;
 import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.impl.AddressResolver;
@@ -147,7 +146,7 @@ public class HostnameResolutionTest extends VertxTestBase {
         listenLatch.countDown();
       }));
       awaitLatch(listenLatch);
-      client.getNow(8080, "vertx.io", "/somepath", onSuccess(resp -> {
+      client.get(8080, "vertx.io", "/somepath", onSuccess(resp -> {
         Buffer buffer = Buffer.buffer();
         resp.handler(buffer::appendBuffer);
         resp.endHandler(v -> {
@@ -386,6 +385,17 @@ public class HostnameResolutionTest extends VertxTestBase {
   public void testCaseInsensitiveResolveFromHosts() {
     VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsPath("hosts_config.txt")));
     vertx.resolveAddress("SERVER.NET", onSuccess(addr -> {
+      assertEquals("192.168.0.15", addr.getHostAddress());
+      assertEquals("server.net", addr.getHostName());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testTrailingDotResolveFromHosts() {
+    VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsPath("hosts_config.txt")));
+    vertx.resolveAddress("server.net.", onSuccess(addr -> {
       assertEquals("192.168.0.15", addr.getHostAddress());
       assertEquals("server.net", addr.getHostName());
       testComplete();

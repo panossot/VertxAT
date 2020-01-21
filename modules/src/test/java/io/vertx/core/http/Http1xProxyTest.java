@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -14,10 +14,10 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
+import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.function.Function;
-
+import java.util.function.Consumer;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
@@ -41,20 +41,18 @@ public class Http1xProxyTest extends HttpTestBase {
     testHttpProxyRequest2(handler -> client.get(new RequestOptions().setSsl(false).setHost("localhost").setPort(8080), handler));
   }
 
-  private void testHttpProxyRequest2(Function<Handler<AsyncResult<HttpClientResponse>>, HttpClientRequest> reqFact) throws Exception {
+  private void testHttpProxyRequest2(Consumer<Handler<AsyncResult<HttpClientResponse>>> reqFact) throws Exception {
     server.requestHandler(req -> {
       req.response().end();
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = reqFact.apply(onSuccess(resp -> {
+      reqFact.accept(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         assertNotNull("request did not go through proxy", proxy.getLastUri());
         assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
         testComplete();
       }));
-      req.exceptionHandler(this::fail);
-      req.end();
     }));
     await();
   }
@@ -78,7 +76,7 @@ public class Http1xProxyTest extends HttpTestBase {
         assertNotNull("request did not go through proxy", proxy.getLastUri());
         assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
         testComplete();
-      })).exceptionHandler(th -> fail(th)).end();
+      }));
     }));
     await();
   }
@@ -96,13 +94,11 @@ public class Http1xProxyTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest clientReq = client.getAbs(url, onSuccess(resp -> {
+      client.get(new RequestOptions().setURI(url), onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         assertEquals("request did sent the expected url", url, proxy.getLastUri());
         testComplete();
       }));
-      clientReq.exceptionHandler(this::fail);
-      clientReq.end();
     }));
     await();
   }
@@ -119,7 +115,7 @@ public class Http1xProxyTest extends HttpTestBase {
 
     startServer();
 
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
       assertEquals(200, resp.statusCode());
       assertNotNull("request did not go through proxy", proxy.getLastUri());
       testComplete();
@@ -142,7 +138,7 @@ public class Http1xProxyTest extends HttpTestBase {
 
     startServer();
 
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
       assertEquals(200, resp.statusCode());
       assertNotNull("request did not go through proxy", proxy.getLastUri());
       testComplete();

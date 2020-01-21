@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -14,6 +14,7 @@ package io.vertx.core.net;
 import java.net.InetSocketAddress;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -133,7 +134,7 @@ public class ProxyErrorTest extends VertxTestBase {
             .setPort(proxy.getPort()));
     HttpClient client = vertx.createHttpClient(options);
 
-    client.getAbs(url, assertResponse).end();
+    client.get(new RequestOptions().setAbsoluteURI(url), assertResponse);
 
     await();
   }

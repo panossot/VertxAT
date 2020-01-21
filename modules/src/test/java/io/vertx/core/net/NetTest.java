@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Red Hat, Inc. and others
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -908,6 +908,7 @@ public class NetTest extends VertxTestBase {
     assertNullPointerException(() -> client.connect(80, "localhost", (Handler<AsyncResult<NetSocket>>) null));
   }
 
+  @Test
   public void testListenInvalidPort() {
     /* Port 80 is free to use by any application on Windows, so this test fails. */
     Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
@@ -2404,38 +2405,6 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testNetSocketStreamCallbackIsAsync() {
-    this.server = vertx.createNetServer(new NetServerOptions());
-    AtomicInteger done = new AtomicInteger();
-    ReadStream<NetSocket> stream = server.connectStream();
-    stream.handler(req -> {});
-    ThreadLocal<Object> stack = new ThreadLocal<>();
-    stack.set(true);
-    stream.endHandler(v -> {
-      assertTrue(Vertx.currentContext().isEventLoopContext());
-      assertNull(stack.get());
-      if (done.incrementAndGet() == 2) {
-        testComplete();
-      }
-    });
-    server.listen(testAddress, ar -> {
-      assertTrue(Vertx.currentContext().isEventLoopContext());
-      assertNull(stack.get());
-      ThreadLocal<Object> stack2 = new ThreadLocal<>();
-      stack2.set(true);
-      server.close(v -> {
-        assertTrue(Vertx.currentContext().isEventLoopContext());
-        assertNull(stack2.get());
-        if (done.incrementAndGet() == 2) {
-          testComplete();
-        }
-      });
-      stack2.set(null);
-    });
-    await();
-  }
-
-  @Test
   public void testMultipleServerClose() {
     this.server = vertx.createNetServer();
     AtomicInteger times = new AtomicInteger();
@@ -2461,7 +2430,8 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testInWorker() throws Exception {
+  public void testInWorker() {
+    waitFor(2);
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
@@ -2473,9 +2443,23 @@ public class NetTest extends VertxTestBase {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
           assertSame(context, Vertx.currentContext());
-          conn.handler(conn::write);
+          conn.handler(buff -> {
+            assertTrue(Vertx.currentContext().isWorkerContext());
+            assertTrue(Context.isOnWorkerThread());
+            assertSame(context, Vertx.currentContext());
+            conn.write(buff);
+          });
           conn.closeHandler(v -> {
-            testComplete();
+            assertTrue(Vertx.currentContext().isWorkerContext());
+            assertTrue(Context.isOnWorkerThread());
+            assertSame(context, Vertx.currentContext());
+            complete();
+          });
+          conn.endHandler(v -> {
+            assertTrue(Vertx.currentContext().isWorkerContext());
+            assertTrue(Context.isOnWorkerThread());
+            assertSame(context, Vertx.currentContext());
+            complete();
           });
         }).listen(testAddress, onSuccess(s -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
@@ -2726,7 +2710,7 @@ public class NetTest extends VertxTestBase {
   }
 
   private TestLoggerFactory testLogging() throws Exception {
-	return TestUtils.testLogging(() -> {
+    return TestUtils.testLogging(() -> {
       server.connectHandler(so -> {
         so.end(Buffer.buffer("fizzbuzz"));
       });
@@ -2736,7 +2720,7 @@ public class NetTest extends VertxTestBase {
         }));
       }));
       await();
-	});
+    });
   }
 
   /**
@@ -3112,8 +3096,12 @@ public class NetTest extends VertxTestBase {
       public void start() throws Exception {
         NetClient client = vertx.createNetClient();
         client.connect(testAddress, onSuccess(so ->{
+          assertTrue(Context.isOnWorkerThread());
           Buffer received = Buffer.buffer();
-          so.handler(received::appendBuffer);
+          so.handler(buff -> {
+            assertTrue(Context.isOnWorkerThread());
+            received.appendBuffer(buff);
+          });
           so.closeHandler(v -> {
             assertEquals(expected, received.toString());
             testComplete();
@@ -3131,16 +3119,21 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testWorkerServer() throws Exception {
+  public void testWorkerServer() {
     String expected = TestUtils.randomAlphaString(2000);
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startPromise) throws Exception {
         NetServer server = vertx.createNetServer();
         server.connectHandler(so -> {
+          assertTrue(Context.isOnWorkerThread());
           Buffer received = Buffer.buffer();
-          so.handler(received::appendBuffer);
+          so.handler(buffer -> {
+            assertTrue(Context.isOnWorkerThread());
+            received.appendBuffer(buffer);
+          });
           so.closeHandler(v -> {
+            assertTrue(Context.isOnWorkerThread());
             assertEquals(expected, received.toString());
             testComplete();
           });
@@ -3150,7 +3143,9 @@ public class NetTest extends VertxTestBase {
             Thread.currentThread().interrupt();
           }
         });
-        server.listen(testAddress, ar -> startPromise.handle(ar.mapEmpty()));
+        server.listen(testAddress, ar -> {
+          startPromise.handle(ar.mapEmpty());
+        });
       }
     }, new DeploymentOptions().setWorker(true), onSuccess(v -> {
       client.connect(testAddress, onSuccess(so -> {
@@ -3202,7 +3197,7 @@ public class NetTest extends VertxTestBase {
     });
     startServer(SocketAddress.inetSocketAddress(1234, "localhost"));
     HttpClient client = vertx.createHttpClient(clientOptions);
-    client.getNow(1234, "localhost", "/somepath", onSuccess(resp -> {
+    client.get(1234, "localhost", "/somepath", onSuccess(resp -> {
       assertEquals(200, resp.statusCode());
       resp.bodyHandler(buff -> {
         assertEquals("Hello World", buff.toString());

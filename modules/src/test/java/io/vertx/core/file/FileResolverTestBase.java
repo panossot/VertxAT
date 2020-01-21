@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -237,12 +237,15 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
       res.response().sendFile(webRoot + "/somefile.html");
     }).listen(onSuccess(res -> {
-      vertx.createHttpClient(new HttpClientOptions()).request(HttpMethod.GET, 8080, "localhost", "/", onSuccess(resp -> {
-        resp.bodyHandler(buff -> {
-          assertTrue(buff.toString().startsWith("<html><body>blah</body></html>"));
-          testComplete();
-        });
-      })).end();
+      vertx.createHttpClient(new HttpClientOptions())
+        .request(HttpMethod.GET, 8080, "localhost", "/")
+        .setHandler(onSuccess(resp -> {
+          resp.bodyHandler(buff -> {
+            assertTrue(buff.toString().startsWith("<html><body>blah</body></html>"));
+            testComplete();
+          });
+        }))
+        .end();
     }));
     await();
   }
