@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2014 Red Hat, Inc. and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -16,7 +16,6 @@ import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.util.NetUtil;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Future;
-import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.net.*;
@@ -42,7 +41,7 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.1*3.8.4"})
 public class TestUtils {
 
   private static Random random = new Random();
@@ -251,18 +250,6 @@ public class TestUtils {
     return settings;
   }
 
-  public static MultiMap randomMultiMap(int num) {
-    MultiMap multiMap = MultiMap.caseInsensitiveMultiMap();
-    for (int i = 0; i < num; i++) {
-      String key;
-      do {
-        key = TestUtils.randomAlphaString(1 + (int) ((19) * Math.random())).toLowerCase();
-      } while (multiMap.contains(key));
-      multiMap.set(key, TestUtils.randomAlphaString(1 + (int) ((19) * Math.random())));
-    }
-    return multiMap;
-  }
-
   public static <E extends Enum<E>> Set<E> randomEnumSet(Class<E> enumType) {
     EnumSet<E> set = EnumSet.noneOf(enumType);
     for (E e : EnumSet.allOf(enumType)) {
@@ -461,4 +448,5 @@ public class TestUtils {
     }
     return factory;
   }
+
 }

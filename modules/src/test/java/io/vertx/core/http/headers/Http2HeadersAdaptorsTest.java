@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -9,12 +9,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http;
+package io.vertx.core.http.headers;
 
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.impl.Http2HeadersAdaptor;
+import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -31,8 +32,8 @@ import static org.junit.Assert.*;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.8.4"})
-public class Http2HeadersTest {
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+public class Http2HeadersAdaptorsTest extends HeadersTestBase {
 
   DefaultHttp2Headers headers;
   MultiMap map;
@@ -41,6 +42,11 @@ public class Http2HeadersTest {
   public void setUp() {
     headers = new DefaultHttp2Headers();
     map = new Http2HeadersAdaptor(headers);
+  }
+
+  @Override
+  protected MultiMap newMultiMap() {
+    return new Http2HeadersAdaptor(new DefaultHttp2Headers());
   }
 
   @Test
@@ -91,6 +97,7 @@ public class Http2HeadersTest {
     assertHeaderNames();
   }
 
+  @Ignore
   @Test
   public void testEntries() {
     map.set("foo", Arrays.<String>asList("foo_value_1", "foo_value_2"));

@@ -12,7 +12,6 @@
 package io.vertx.core.http;
 
 import io.netty.handler.codec.compression.DecompressionException;
-import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.vertx.codegen.annotations.Nullable;
@@ -21,7 +20,6 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
-import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.Pump;
 import io.vertx.test.core.Repeat;
@@ -120,19 +118,33 @@ public abstract class HttpTest extends HttpTestBase {
   public void testListenDomainSocketAddress() throws Exception {
     Vertx vx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
     Assume.assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
-    HttpServer httpserver = vx.createHttpServer(createBaseServerOptions()).requestHandler(req -> req.response().end());
-    File sockFile = TestUtils.tmpFile(".sock");
-    SocketAddress sockAddress = SocketAddress.domainSocketAddress(sockFile.getAbsolutePath());
-    httpserver.listen(sockAddress, onSuccess(server -> {
-      client.request(sockAddress, new RequestOptions()
-        .setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setURI(DEFAULT_TEST_URI))
-        .setHandler(onSuccess(resp -> {
-          resp.endHandler(v -> {
-            testComplete();
-          });
-      })).end();
-    }));
-
+    int len = 3;
+    waitFor(len * len);
+    List<SocketAddress> addresses = new ArrayList<>();
+    for (int i = 0;i < len;i++) {
+      File sockFile = TestUtils.tmpFile(".sock");
+      SocketAddress sockAddress = SocketAddress.domainSocketAddress(sockFile.getAbsolutePath());
+      HttpServer server = vertx
+        .createHttpServer(createBaseServerOptions())
+        .requestHandler(req -> req.response().end(sockAddress.path()));
+      startServer(sockAddress, server);
+      addresses.add(sockAddress);
+    }
+    for (int i = 0;i < len;i++) {
+      SocketAddress sockAddress = addresses.get(i);
+      for (int j = 0;j < len;j++) {
+        client.request(sockAddress, new RequestOptions()
+          .setHost(DEFAULT_HTTP_HOST)
+          .setPort(DEFAULT_HTTP_PORT)
+          .setURI(DEFAULT_TEST_URI))
+          .setHandler(onSuccess(resp -> {
+            resp.body(onSuccess(body -> {
+              assertEquals(sockAddress.path(), body.toString());
+              complete();
+            }));
+          })).end();
+      }
+    }
     try {
       await();
     } finally {
@@ -746,7 +758,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private void testParams(char delim) {
-    Map<String, String> params = genMap(10);
+    MultiMap params = TestUtils.randomMultiMap(10);
     String query = generateQueryString(params, delim);
     server.requestHandler(req -> {
       assertEquals(query, req.query());
@@ -847,7 +859,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private void testRequestHeaders(boolean individually) {
-    MultiMap expectedHeaders = getHeaders(10);
+    MultiMap expectedHeaders = randomMultiMap(10);
 
     server.requestHandler(req -> {
       MultiMap headers = req.headers();
@@ -887,7 +899,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private void testResponseHeaders(boolean individually) {
-    MultiMap headers = getHeaders(10);
+    MultiMap headers = randomMultiMap(10);
 
     server.requestHandler(req -> {
       if (individually) {
@@ -1573,7 +1585,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private void testResponseTrailers(boolean individually) {
-    MultiMap trailers = getHeaders(10);
+    MultiMap trailers = randomMultiMap(10);
 
     server.requestHandler(req -> {
       req.response().setChunked(true);
@@ -2596,7 +2608,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testRemoteAddress() {
     server.requestHandler(req -> {
-      if (testAddress.host() != null) {
+      if (testAddress.isInetSocket()) {
         assertEquals("127.0.0.1", req.remoteAddress().host());
       } else {
         // Returns null for domain sockets
@@ -4844,37 +4856,16 @@ public abstract class HttpTest extends HttpTestBase {
     return file;
   }
 
-  protected static String generateQueryString(Map<String, String> params, char delim) {
+  protected static String generateQueryString(MultiMap params, char delim) {
     StringBuilder sb = new StringBuilder();
     int count = 0;
-    for (Map.Entry<String, String> param : params.entrySet()) {
+    for (Map.Entry<String, String> param : params.entries()) {
       sb.append(param.getKey()).append("=").append(param.getValue());
       if (++count != params.size()) {
         sb.append(delim);
       }
     }
     return sb.toString();
-  }
-
-  protected static Map<String, String> genMap(int num) {
-    Map<String, String> map = new HashMap<>();
-    for (int i = 0; i < num; i++) {
-      String key;
-      do {
-        key = TestUtils.randomAlphaString(1 + (int) ((19) * Math.random())).toLowerCase();
-      } while (map.containsKey(key));
-      map.put(key, TestUtils.randomAlphaString(1 + (int) ((19) * Math.random())));
-    }
-    return map;
-  }
-
-  protected static MultiMap getHeaders(int num) {
-    Map<String, String> map = genMap(num);
-    MultiMap headers = new HeadersAdaptor(new DefaultHttpHeaders());
-    for (Map.Entry<String, String> entry : map.entrySet()) {
-      headers.add(entry.getKey(), entry.getValue());
-    }
-    return headers;
   }
 
   @Test

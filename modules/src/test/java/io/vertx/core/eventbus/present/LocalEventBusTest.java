@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Red Hat, Inc. and others
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,6 @@ package io.vertx.core.eventbus;
 
 import io.vertx.core.*;
 import io.vertx.core.eventbus.impl.MessageConsumerImpl;
-import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
@@ -754,7 +753,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testHeadersCopiedAfterSend() throws Exception {
-    MultiMap headers = new CaseInsensitiveHeaders();
+    MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add("foo", "bar");
     vertx.eventBus().consumer(ADDRESS1).handler(msg -> {
       assertNotSame(headers, msg.headers());
