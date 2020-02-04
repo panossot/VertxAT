@@ -31,9 +31,10 @@ public class VerticleFactoryTest extends VertxTestBase {
 
   public void setUp() throws Exception {
     super.setUp();
-    // Unregister the factory that's loaded from the classpath
-    VerticleFactory factory = vertx.verticleFactories().iterator().next();
-    vertx.unregisterVerticleFactory(factory);
+    // Unregister the factories that are loaded from the classpath
+    for (VerticleFactory factory : vertx.verticleFactories()) {
+      vertx.unregisterVerticleFactory(factory);
+    }
   }
 
   @Test
@@ -252,17 +253,6 @@ public class VerticleFactoryTest extends VertxTestBase {
       @Override
       public String prefix() {
         return "resolve";
-      }
-      @Override
-      public boolean requiresResolve() {
-        return true;
-      }
-      @Override
-      public void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Promise<String> resolution) {
-        vertx.runOnContext(v -> {
-          // Async resolution
-          resolution.complete("whatever");
-        });
       }
       @Override
       public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
@@ -529,26 +519,6 @@ public class VerticleFactoryTest extends VertxTestBase {
     @Override
     public int order() {
       return order;
-    }
-
-    @Override
-    public boolean requiresResolve() {
-      return resolvedIdentifier != null;
-    }
-
-    @Override
-    public void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Promise<String> resolution) {
-      if (failInResolve) {
-        resolution.fail(new IOException("whatever"));
-      } else {
-        identifierToResolve = identifier;
-        deploymentOptionsToResolve = deploymentOptions;
-        // Now we change the deployment options
-        deploymentOptions.setConfig(new JsonObject().put("wibble", "quux"));
-        deploymentOptions.setWorker(true);
-        deploymentOptions.setIsolationGroup(isolationGroup);
-        resolution.complete(resolvedIdentifier);
-      }
     }
 
     @Override
