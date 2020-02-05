@@ -96,14 +96,6 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
     }
   }
 
-  @Override
-  public void beginHandleMessage(HandlerMetric handler, boolean local) {
-    handler.beginCount.incrementAndGet();
-    if (local) {
-      handler.localBeginCount.incrementAndGet();
-    }
-  }
-
   public void endHandleMessage(HandlerMetric handler, Throwable failure) {
     handler.endCount.incrementAndGet();
     if (failure != null) {
