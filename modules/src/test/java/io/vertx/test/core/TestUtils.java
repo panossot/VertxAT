@@ -42,7 +42,7 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.5"})
 public class TestUtils {
 
   private static Random random = new Random();

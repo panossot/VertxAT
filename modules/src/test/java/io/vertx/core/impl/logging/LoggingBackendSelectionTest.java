@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl.logging;
+package io.vertx.core.logging;
 
 import org.junit.After;
 import org.junit.Before;
@@ -93,7 +93,7 @@ public class LoggingBackendSelectionTest {
   }
 
   private String loggingBackend() throws Exception {
-    Class<?> factoryClass = testClassLoader.loadClass("io.vertx.core.impl.logging.LoggerFactory");
+    Class<?> factoryClass = testClassLoader.loadClass("io.vertx.core.logging.LoggerFactory");
     Method factoryMethod = factoryClass.getMethod("getLogger", String.class);
     Object loggerAdapter = factoryMethod.invoke(null, "whatever");
     Field adaptedField = loggerAdapter.getClass().getDeclaredField("adapted");
@@ -117,7 +117,7 @@ public class LoggingBackendSelectionTest {
       if (hiddenPackages.stream().anyMatch(name::startsWith)) {
         throw new ClassNotFoundException(name);
       }
-      if (name.startsWith("io.vertx.core.impl.logging") || name.startsWith("io.vertx.core.logging")) {
+      if (name.startsWith("io.vertx.core.logging") || name.startsWith("io.vertx.core.logging")) {
         URL url = getResource(name.replace('.', '/') + ".class");
         if (url == null) {
           throw new ClassNotFoundException(name);

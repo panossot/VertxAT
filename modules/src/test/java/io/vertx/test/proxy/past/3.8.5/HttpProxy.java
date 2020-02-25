@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -25,7 +25,6 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.Pump;
-import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
 /**
  * Http Proxy for testing
@@ -45,7 +44,9 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
  * <p>
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
+
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.5*3.8.5"})
 public class HttpProxy extends TestProxyBase {
 
   private static final int PORT = 13128;
@@ -85,7 +86,7 @@ public class HttpProxy extends TestProxyBase {
           return;
         }
       }
-      lastRequestHeaders = HttpHeaders.headers().addAll(request.headers());
+      lastRequestHeaders = MultiMap.caseInsensitiveMultiMap().addAll(request.headers());
       if (error != 0) {
         request.response().setStatusCode(error).end("proxy request failed");
       } else if (method == HttpMethod.CONNECT) {
@@ -133,34 +134,30 @@ public class HttpProxy extends TestProxyBase {
           uri = forceUri;
         }
         HttpClient client = vertx.createHttpClient();
-        RequestOptions opts = new RequestOptions();
-        opts.setAbsoluteURI(uri);
+        HttpClientRequest clientRequest = client.getAbs(uri, resp -> {
+          for (String name : resp.headers().names()) {
+            request.response().putHeader(name, resp.headers().getAll(name));
+          }
+          resp.bodyHandler(body -> {
+            request.response().end(body);
+          });
+        });
         for (String name : request.headers().names()) {
           if (!name.equals("Proxy-Authorization")) {
-            opts.addHeader(name, request.headers().get(name));
+            clientRequest.putHeader(name, request.headers().getAll(name));
           }
         }
-        client.get(opts, ar -> {
-          if (ar.succeeded()) {
-            HttpClientResponse resp = ar.result();
-            for (String name : resp.headers().names()) {
-              request.response().putHeader(name, resp.headers().getAll(name));
-            }
-            resp.bodyHandler(body -> {
-              request.response().end(body);
-            });
+        clientRequest.exceptionHandler(e -> {
+          log.debug("exception", e);
+          int status;
+          if (e instanceof UnknownHostException) {
+            status = 504;
           } else {
-            Throwable e = ar.cause();
-            log.debug("exception", e);
-            int status;
-            if (e instanceof UnknownHostException) {
-              status = 504;
-            } else {
-              status = 400;
-            }
-            request.response().setStatusCode(status).end(e.toString() + " on client request");
+            status = 400;
           }
+          request.response().setStatusCode(status).end(e.toString() + " on client request");
         });
+        clientRequest.end();
       } else {
         request.response().setStatusCode(405).end("method not supported");
       }
