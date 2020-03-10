@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -19,7 +19,6 @@ import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
@@ -46,12 +45,12 @@ public class WriteStreamTest extends AsyncTestBase {
     @Override
     public void write(Object data, Handler<AsyncResult<Void>> handler) {
       writeCount.incrementAndGet();
-      writeFut.future().setHandler(handler);
+      writeFut.future().onComplete(handler);
     }
     @Override
     public void end(Handler<AsyncResult<Void>> handler) {
       endCount.incrementAndGet();
-      endFut.future().setHandler(handler);
+      endFut.future().onComplete(handler);
     }
   }
 

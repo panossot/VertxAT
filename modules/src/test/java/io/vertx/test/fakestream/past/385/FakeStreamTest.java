@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -10,8 +10,6 @@
  */
 package io.vertx.test.fakestream;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Promise;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 
@@ -21,13 +19,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.8.5"})
 public class FakeStreamTest extends AsyncTestBase {
 
   private FakeStream<Integer> stream;
@@ -125,56 +121,5 @@ public class FakeStreamTest extends AsyncTestBase {
     stream.emit(0, 1);
     stream.fetch(3);
     assertEquals(Arrays.asList(0, 1, 2), emitted);
-  }
-
-  @Test
-  public void testFetchAfterEnd() {
-    AtomicInteger ended = new AtomicInteger();
-    AtomicReference<AsyncResult> endRes = new AtomicReference<>();
-    stream.endHandler(v -> ended.incrementAndGet());
-    stream.end(endRes::set);
-    assertEquals(1, ended.get());
-    assertTrue(endRes.get().succeeded());
-    stream.fetch(1);
-    assertEquals(1, ended.get());
-    assertTrue(endRes.get().succeeded());
-  }
-
-  @Test
-  public void testAsyncEnd() {
-    Promise<Void> end = Promise.promise();
-    AtomicInteger ended = new AtomicInteger();
-    AtomicReference<AsyncResult> endRes = new AtomicReference<>();
-    stream.setEnd(end.future());
-    stream.endHandler(v -> ended.incrementAndGet());
-    stream.end(endRes::set);
-    assertEquals(0, ended.get());
-    assertNull(endRes.get());
-    end.complete();
-    assertEquals(1, ended.get());
-    assertTrue(endRes.get().succeeded());
-  }
-
-  @Test
-  public void testAsyncEndDeferred() {
-    Promise<Void> end = Promise.promise();
-    AtomicInteger ended = new AtomicInteger();
-    AtomicReference<AsyncResult> endRes = new AtomicReference<>();
-    stream.setEnd(end.future());
-    stream.pause();
-    stream.emit(3);
-    stream.endHandler(v -> ended.incrementAndGet());
-    stream.end(endRes::set);
-    assertEquals(0, ended.get());
-    assertNull(endRes.get());
-    end.complete();
-    assertEquals(0, ended.get());
-    assertNull(endRes.get());
-    stream.fetch(1);
-    assertEquals(0, ended.get());
-    assertNull(endRes.get());
-    stream.fetch(1);
-    assertEquals(1, ended.get());
-    assertTrue(endRes.get().succeeded());
   }
 }

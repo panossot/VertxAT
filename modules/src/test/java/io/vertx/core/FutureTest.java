@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -100,7 +101,7 @@ public class FutureTest extends VertxTestBase {
   public void testCallSetHandlerBeforeCompletion() {
     AtomicBoolean called = new AtomicBoolean();
     Promise<Object> promise = Promise.promise();
-    promise.future().setHandler(result -> {
+    promise.future().onComplete(result -> {
       assertTrue(result.succeeded());
       assertFalse(result.failed());
       assertEquals(null, result.result());
@@ -113,7 +114,7 @@ public class FutureTest extends VertxTestBase {
     called.set(false);
     Object foo = new Object();
     promise = Promise.promise();
-    promise.future().setHandler(result -> {
+    promise.future().onComplete(result -> {
       called.set(true);
       assertTrue(result.succeeded());
       assertFalse(result.failed());
@@ -126,7 +127,7 @@ public class FutureTest extends VertxTestBase {
     called.set(false);
     Exception cause = new Exception();
     promise = Promise.promise();
-    promise.future().setHandler(result -> {
+    promise.future().onComplete(result -> {
       called.set(true);
       assertFalse(result.succeeded());
       assertTrue(result.failed());
@@ -142,7 +143,7 @@ public class FutureTest extends VertxTestBase {
   public void testCallSetHandlerAfterCompletion() {
     AtomicBoolean called = new AtomicBoolean();
     Future<Object> future = Future.succeededFuture();
-    future.setHandler(result -> {
+    future.onComplete(result -> {
       assertTrue(result.succeeded());
       assertFalse(result.failed());
       assertEquals(null, result.result());
@@ -153,7 +154,7 @@ public class FutureTest extends VertxTestBase {
     called.set(false);
     Object foo = new Object();
     future = Future.succeededFuture(foo);
-    future.setHandler(result -> {
+    future.onComplete(result -> {
       assertTrue(result.succeeded());
       assertFalse(result.failed());
       assertEquals(foo, result.result());
@@ -164,7 +165,7 @@ public class FutureTest extends VertxTestBase {
     called.set(false);
     Exception cause = new Exception();
     future = Future.failedFuture(cause);
-    future.setHandler(result -> {
+    future.onComplete(result -> {
       assertFalse(result.succeeded());
       assertTrue(result.failed());
       assertEquals(null, result.result());
@@ -545,6 +546,25 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testCompositeFutureMulti() {
+    Promise<String> p1 = Promise.promise();
+    Future<String> f1 = p1.future();
+    Promise<Integer> p2 = Promise.promise();
+    Future<Integer> f2 = p2.future();
+    CompositeFuture composite = CompositeFuture.all(f1, f2);
+    AtomicInteger count = new AtomicInteger();
+    composite.onComplete(ar -> {
+      count.compareAndSet(0, 1);
+    });
+    composite.onComplete(ar -> {
+      count.compareAndSet(1, 2);
+    });
+    p1.complete("foo");
+    p2.complete(4);
+    assertEquals(2, count.get());
+  }
+
+  @Test
   public void testComposeSuccessToSuccess() {
     AtomicReference<String> ref = new AtomicReference<>();
     Promise<Integer> p = Promise.promise();
@@ -885,7 +905,7 @@ public class FutureTest extends VertxTestBase {
     private final AtomicInteger count = new AtomicInteger();
 
     Checker(Future<T> future) {
-      future.setHandler(ar -> {
+      future.onComplete(ar -> {
         count.incrementAndGet();
         result.set(ar);
       });
@@ -1219,17 +1239,17 @@ public class FutureTest extends VertxTestBase {
     Future<String> f = promise.future();
     Field handlerField = f.getClass().getDeclaredField("handler");
     handlerField.setAccessible(true);
-    f.setHandler(ar -> {});
+    f.onComplete(ar -> {});
     promise.complete();
     assertNull(handlerField.get(f));
-    f.setHandler(ar -> {});
+    f.onComplete(ar -> {});
     assertNull(handlerField.get(f));
     promise = Promise.promise();
     f = promise.future();
-    f.setHandler(ar -> {});
+    f.onComplete(ar -> {});
     promise.fail("abc");
     assertNull(handlerField.get(f));
-    f.setHandler(ar -> {});
+    f.onComplete(ar -> {});
     assertNull(handlerField.get(f));
   }
 
@@ -1237,13 +1257,13 @@ public class FutureTest extends VertxTestBase {
   public void testSetNullHandler() throws Exception {
     Promise<String> promise = Promise.promise();
     try {
-      promise.future().setHandler(null);
+      promise.future().onComplete(null);
       fail();
     } catch (NullPointerException ignore) {
     }
     promise.complete();
     try {
-      promise.future().setHandler(null);
+      promise.future().onComplete(null);
       fail();
     } catch (NullPointerException ignore) {
     }
@@ -1268,7 +1288,7 @@ public class FutureTest extends VertxTestBase {
       latch1.countDown();
     });
     awaitLatch(latch1);
-    promise1.future().setHandler(ar -> {
+    promise1.future().onComplete(ar -> {
       assertSame(elThread, Thread.currentThread());
       assertTrue(ar.succeeded());
       assertSame(result, ar.result());
@@ -1277,7 +1297,7 @@ public class FutureTest extends VertxTestBase {
 
     //
     Promise<Object> promise2 = ctx.promise();
-    promise2.future().setHandler(ar -> {
+    promise2.future().onComplete(ar -> {
       assertSame(elThread, Thread.currentThread());
       assertTrue(ar.succeeded());
       assertSame(result, ar.result());
@@ -1288,7 +1308,7 @@ public class FutureTest extends VertxTestBase {
     //
     Promise<Object> promise3 = ctx.promise();
     promise3.complete(result);
-    promise3.future().setHandler(ar -> {
+    promise3.future().onComplete(ar -> {
       assertSame(elThread, Thread.currentThread());
       assertTrue(ar.succeeded());
       assertSame(result, ar.result());
@@ -1297,7 +1317,7 @@ public class FutureTest extends VertxTestBase {
 
     //
     Promise<Object> promise4 = ctx.promise();
-    promise4.future().setHandler(ar -> {
+    promise4.future().onComplete(ar -> {
       assertSame(elThread, Thread.currentThread());
       assertTrue(ar.succeeded());
       assertSame(result, ar.result());
@@ -1347,10 +1367,10 @@ public class FutureTest extends VertxTestBase {
     waitFor(2);
     Promise<String> promise = Promise.promise();
     Future<String> fut = promise.future();
-    fut.setHandler(ar -> {
+    fut.onComplete(ar -> {
       complete();
     });
-    fut.setHandler(ar -> {
+    fut.onComplete(ar -> {
       complete();
     });
     promise.complete();
@@ -1363,10 +1383,10 @@ public class FutureTest extends VertxTestBase {
     Promise<String> promise = Promise.promise();
     promise.complete();
     Future<String> fut = promise.future();
-    fut.setHandler(ar -> {
+    fut.onComplete(ar -> {
       complete();
     });
-    fut.setHandler(ar -> {
+    fut.onComplete(ar -> {
       complete();
     });
     await();
@@ -1377,11 +1397,11 @@ public class FutureTest extends VertxTestBase {
     waitFor(2);
     Promise<String> promise = Promise.promise();
     Future<String> fut = promise.future();
-    fut.setHandler(ar -> {
+    fut.onComplete(ar -> {
       complete();
     });
     promise.complete();
-    fut.setHandler(ar -> {
+    fut.onComplete(ar -> {
       complete();
     });
     await();
@@ -1425,6 +1445,176 @@ public class FutureTest extends VertxTestBase {
       complete();
     });
     promise.fail(failure);
+    await();
+  }
+
+  @Test
+  public void testToCompletionStageTrampolining() {
+    waitFor(2);
+    Thread mainThread = Thread.currentThread();
+    Future<String> success = Future.succeededFuture("Yo");
+    success.toCompletionStage()
+      .thenAccept(str -> {
+        assertEquals("Yo", str);
+        assertSame(mainThread, Thread.currentThread());
+        complete();
+      });
+    Future<String> failed = Future.failedFuture(new RuntimeException("Woops"));
+    failed.toCompletionStage()
+      .whenComplete((str, err) -> {
+        assertNull(str);
+        assertTrue(err instanceof RuntimeException);
+        assertEquals("Woops", err.getMessage());
+        assertSame(mainThread, Thread.currentThread());
+        complete();
+      });
+    await();
+  }
+
+  @Test
+  public void testToCompletionStageDelayedCompletion() {
+    waitFor(2);
+    Thread mainThread = Thread.currentThread();
+    Promise<String> willSucceed = Promise.promise();
+    Promise<String> willFail = Promise.promise();
+
+    willSucceed.future().toCompletionStage().whenComplete((str, err) -> {
+      assertEquals("Yo", str);
+      assertNull(err);
+      assertNotSame(mainThread, Thread.currentThread());
+      complete();
+    });
+
+    willFail.future().toCompletionStage().whenComplete((str, err) -> {
+      assertNull(str);
+      assertTrue(err instanceof RuntimeException);
+      assertEquals("Woops", err.getMessage());
+      assertNotSame(mainThread, Thread.currentThread());
+      complete();
+    });
+
+    disableThreadChecks();
+    new Thread(() -> willSucceed.complete("Yo")).start();
+    new Thread(() -> willFail.fail(new RuntimeException("Woops"))).start();
+    await();
+  }
+
+  @Test
+  public void testFromCompletionStageTrampolining() {
+    waitFor(2);
+    disableThreadChecks();
+
+    AtomicReference<Thread> successSupplierThread = new AtomicReference<>();
+    CompletableFuture<String> willSucceed = new CompletableFuture<>();
+
+    AtomicReference<Thread> failureSupplierThread = new AtomicReference<>();
+    CompletableFuture<String> willFail = new CompletableFuture<>();
+
+    Future.fromCompletionStage(willSucceed).onSuccess(str -> {
+      assertEquals("Ok", str);
+      assertSame(successSupplierThread.get(), Thread.currentThread());
+      complete();
+    });
+
+    Future.fromCompletionStage(willFail).onFailure(err -> {
+      assertTrue(err instanceof RuntimeException);
+      assertEquals("Woops", err.getMessage());
+      assertSame(failureSupplierThread.get(), Thread.currentThread());
+      complete();
+    });
+
+    ForkJoinPool fjp = ForkJoinPool.commonPool();
+    fjp.execute(() -> {
+      successSupplierThread.set(Thread.currentThread());
+      willSucceed.complete("Ok");
+    });
+    fjp.execute(() -> {
+      failureSupplierThread.set(Thread.currentThread());
+      willFail.completeExceptionally(new RuntimeException("Woops"));
+    });
+
+    await();
+  }
+
+  @Test
+  public void testFromCompletionStageWithContext() {
+    waitFor(2);
+    Context context = vertx.getOrCreateContext();
+
+    AtomicReference<Thread> successSupplierThread = new AtomicReference<>();
+    CompletableFuture<String> willSucceed = new CompletableFuture<>();
+
+    AtomicReference<Thread> failureSupplierThread = new AtomicReference<>();
+    CompletableFuture<String> willFail = new CompletableFuture<>();
+
+    Future.fromCompletionStage(willSucceed, context).onSuccess(str -> {
+      assertEquals("Ok", str);
+      assertNotSame(successSupplierThread.get(), Thread.currentThread());
+      assertEquals(context, vertx.getOrCreateContext());
+      assertTrue(Thread.currentThread().getName().startsWith("vert.x-eventloop-thread"));
+      complete();
+    });
+
+    Future.fromCompletionStage(willFail, context).onFailure(err -> {
+      assertTrue(err instanceof RuntimeException);
+      assertEquals("Woops", err.getMessage());
+      assertNotSame(failureSupplierThread.get(), Thread.currentThread());
+      assertEquals(context, vertx.getOrCreateContext());
+      assertTrue(Thread.currentThread().getName().startsWith("vert.x-eventloop-thread"));
+      complete();
+    });
+
+    ForkJoinPool fjp = ForkJoinPool.commonPool();
+    fjp.execute(() -> {
+      successSupplierThread.set(Thread.currentThread());
+      willSucceed.complete("Ok");
+    });
+    fjp.execute(() -> {
+      failureSupplierThread.set(Thread.currentThread());
+      willFail.completeExceptionally(new RuntimeException("Woops"));
+    });
+
+    await();
+  }
+
+  @Test
+  public void testCompletedFuturesContext() throws Exception {
+    waitFor(4);
+
+    Thread testThread = Thread.currentThread();
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+
+
+    CompletableFuture<Thread> cf = new CompletableFuture<>();
+    context.runOnContext(v -> cf.complete(Thread.currentThread()));
+    Thread contextThread = cf.get();
+
+    Future.succeededFuture().onSuccess(v -> {
+      assertSame(testThread, Thread.currentThread());
+      assertNull(Vertx.currentContext());
+      complete();
+    });
+
+    context.succeededFuture().onSuccess(v -> {
+      assertNotSame(testThread, Thread.currentThread());
+      assertSame(context, Vertx.currentContext());
+      assertSame(contextThread, Thread.currentThread());
+      complete();
+    });
+
+    Future.failedFuture(new Exception()).onFailure(v -> {
+      assertSame(testThread, Thread.currentThread());
+      assertNull(Vertx.currentContext());
+      complete();
+    });
+
+    context.failedFuture(new Exception()).onFailure(v -> {
+      assertNotSame(testThread, Thread.currentThread());
+      assertSame(context, Vertx.currentContext());
+      assertSame(contextThread, Thread.currentThread());
+      complete();
+    });
+
     await();
   }
 }

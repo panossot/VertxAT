@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -20,8 +20,8 @@ import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +31,7 @@ import java.util.List;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.5*3.8.5"})
 public class FaultToleranceVerticle extends AbstractVerticle {
   private static final Logger log = LoggerFactory.getLogger(FaultToleranceVerticle.class);
 
@@ -52,7 +52,11 @@ public class FaultToleranceVerticle extends AbstractVerticle {
     Promise<Void> registrationFuture = Promise.promise();
     registrationFutures.add(registrationFuture.future());
     vertx.eventBus().consumer("ping", this::ping).completionHandler(registrationFuture);
-    CompositeFuture.all(registrationFutures).onSuccess(ar -> vertx.eventBus().send("control", "start"));
+    CompositeFuture.all(registrationFutures).setHandler(ar -> {
+      if (ar.succeeded()) {
+        vertx.eventBus().send("control", "start");
+      }
+    });
   }
 
   private void ping(Message<JsonArray> message) {

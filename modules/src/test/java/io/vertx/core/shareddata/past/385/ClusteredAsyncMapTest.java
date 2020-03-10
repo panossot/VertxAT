@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2014 Red Hat, Inc. and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -25,7 +25,7 @@ import io.vertx.test.fakecluster.FakeClusterManager;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0*3.8.5"})
 public class ClusteredAsyncMapTest extends AsyncMapTest {
 
   int pos;
@@ -63,7 +63,7 @@ public class ClusteredAsyncMapTest extends AsyncMapTest {
           mapNode2.get("Hodor", fut);
         }));
       });
-    }).onComplete(asyncCompFuture -> {
+    }).setHandler(asyncCompFuture -> {
       assertTrue(asyncCompFuture.succeeded());
       String valueMapNode1 = asyncCompFuture.result().resultAt(0);
       String valueMapNode2 = asyncCompFuture.result().resultAt(1);

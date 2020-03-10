@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2014 Red Hat, Inc. and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -23,9 +23,11 @@ import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -34,7 +36,7 @@ import static io.vertx.test.core.TestUtils.*;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.1*3.8.5"})
 public abstract class AsyncMapTest extends VertxTestBase {
 
   protected abstract Vertx getVertx();
@@ -113,34 +115,32 @@ public abstract class AsyncMapTest extends VertxTestBase {
   public void testMapPutTtl() {
     getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       map.put("pipo", "molo", 10, onSuccess(vd -> {
-        getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
-          assertWaitUntil(map2, "pipo", 15, Objects::isNull);
-        }));
+        vertx.setTimer(15, l -> {
+          getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
+            map2.get("pipo", onSuccess(res -> {
+              assertNull(res);
+              testComplete();
+            }));
+          }));
+        });
       }));
     }));
     await();
   }
 
-  private void assertWaitUntil(AsyncMap<String, String> map, String key, long delay, Function<String, Boolean> checks) {
-    vertx.setTimer(delay, l -> {
-      map.get(key, onSuccess(value -> {
-        if (checks.apply(value)) {
-          testComplete();
-        } else {
-          assertWaitUntil(map, key, delay, checks);
-        }
-      }));
-    });
-  }
-
   @Test
   public void testMapPutTtlThenPut() {
-    getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
+    getVertx().sharedData().getAsyncMap("foo", onSuccess(map -> {
       map.put("pipo", "molo", 10, onSuccess(vd -> {
         map.put("pipo", "mili", onSuccess(vd2 -> {
-          getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
-            assertWaitUntil(map2, "pipo", 20, s -> "mili".equals(s));
-          }));
+          vertx.setTimer(20, l -> {
+            getVertx().sharedData().getAsyncMap("foo", onSuccess(map2 -> {
+              map2.get("pipo", onSuccess(res -> {
+                assertEquals("mili", res);
+                testComplete();
+              }));
+            }));
+          });
         }));
       }));
     }));
@@ -222,9 +222,14 @@ public abstract class AsyncMapTest extends VertxTestBase {
     getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       map.putIfAbsent("pipo", "molo", 10, onSuccess(vd -> {
         assertNull(vd);
-        getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
-          assertWaitUntil(map2, "pipo", 15, Objects::isNull);
-        }));
+        vertx.setTimer(15, l -> {
+          getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
+            map2.get("pipo", onSuccess(res -> {
+              assertNull(res);
+              testComplete();
+            }));
+          }));
+        });
       }));
     }));
     await();
@@ -689,7 +694,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
       }));
       futures.add(future.future());
     });
-    CompositeFuture.all(futures).onComplete(onSuccess(cf -> {
+    CompositeFuture.all(futures).setHandler(onSuccess(cf -> {
       Vertx v = getVertx();
       v.sharedData().<JsonObject, Buffer>getAsyncMap("foo", onSuccess(asyncMap -> {
         test.accept(v, asyncMap);
@@ -838,12 +843,17 @@ public abstract class AsyncMapTest extends VertxTestBase {
 
   public static final class SomeClusterSerializableObject implements ClusterSerializable {
     private String str;
+    // Trick smart data grid marshallers: make sure ClusterSerializable methods are the only way to serialize and deserialize this class
+    @SuppressWarnings("unused")
+    private final Vertx vertx;
 
     public SomeClusterSerializableObject() {
+      vertx = Vertx.vertx();
     }
 
     public SomeClusterSerializableObject(String str) {
       this.str = str;
+      vertx = Vertx.vertx();
     }
 
     @Override
