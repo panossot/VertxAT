@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -107,57 +107,6 @@ public class LauncherExtensibilityTest extends CommandTestBase {
     stop();
     assertThat(output.toString()).contains("The command 'start' is not a valid command.");
     assertThat(myLauncher.getCommandNames()).doesNotContain("start");
-  }
-
-  @Test
-  public void testThatCustomLauncherCanCustomizeTheClusteredOption() throws InterruptedException {
-
-    AtomicBoolean asv = new AtomicBoolean();
-    AtomicBoolean bsv = new AtomicBoolean();
-
-    Launcher myLauncher = new Launcher() {
-      @Override
-      protected String getMainVerticle() {
-        return HttpTestVerticle.class.getName();
-      }
-
-      @Override
-      public void afterStartingVertx(Vertx vertx) {
-        LauncherExtensibilityTest.this.vertx = vertx;
-      }
-
-      @Override
-      public void beforeStartingVertx(VertxOptions options) {
-        options.getEventBusOptions().setClustered(true);
-      }
-
-      @Override
-      public void afterStoppingVertx() {
-        asv.set(true);
-      }
-
-      @Override
-      public void beforeStoppingVertx(Vertx vertx) {
-        bsv.set(vertx != null);
-      }
-    };
-
-    myLauncher.dispatch(new String[0]);
-    assertWaitUntil(() -> {
-      try {
-        return RunCommandTest.getHttpCode() == 200;
-      } catch (IOException e) {
-        return false;
-      }
-    });
-
-    assertThat(this.vertx.isClustered()).isTrue();
-
-    BareCommand.getTerminationRunnable(vertx, LoggerFactory.getLogger("foo"), () -> asv.set(true)).run();
-
-    assertThat(bsv.get()).isTrue();
-    assertThat(asv.get()).isTrue();
-    vertx = null;
   }
 
   @Test

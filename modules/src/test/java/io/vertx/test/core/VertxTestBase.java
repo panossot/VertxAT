@@ -12,8 +12,8 @@
 package io.vertx.test.core;
 
 import io.vertx.core.*;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -162,7 +162,7 @@ public class VertxTestBase extends AsyncTestBase {
     for (int i = 0; i < numNodes; i++) {
       int index = i;
       options[i].setClusterManager(getClusterManager())
-        .getEventBusOptions().setHost("localhost").setPort(0).setClustered(true);
+        .getEventBusOptions().setHost("localhost").setPort(0);
       clusteredVertx(options[i], ar -> {
           try {
             if (ar.failed()) {

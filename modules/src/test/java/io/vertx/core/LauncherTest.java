@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -55,10 +55,9 @@ public class LauncherTest extends VertxTestBase {
     if (resource == null) {
       throw new IllegalStateException("Cannot find the vertx-version.txt");
     } else {
-      BufferedReader in = new BufferedReader(
-        new InputStreamReader(resource.openStream()));
-      expectedVersion = in.readLine();
-      in.close();
+      try (BufferedReader in = new BufferedReader(new InputStreamReader(resource.openStream()))) {
+        expectedVersion = in.readLine();
+      }
     }
 
     Launcher.resetProcessArguments();
@@ -471,7 +470,7 @@ public class LauncherTest extends VertxTestBase {
       .put("eventLoopPoolSize", 123)
       .put("maxEventLoopExecuteTime", 123767667)
       .put("metricsOptions", new JsonObject().put("enabled", true))
-      .put("eventBusOptions", new JsonObject().put("clustered", true).put("clusterPublicHost", "mars"))
+      .put("eventBusOptions", new JsonObject().put("clusterPublicHost", "mars"))
       .put("haGroup", "somegroup")
       .put("maxEventLoopExecuteTimeUnit", "SECONDS");
 
@@ -494,7 +493,6 @@ public class LauncherTest extends VertxTestBase {
     assertEquals(123, opts.getEventLoopPoolSize(), 0);
     assertEquals(123767667L, opts.getMaxEventLoopExecuteTime());
     assertEquals(true, opts.getMetricsOptions().isEnabled());
-    assertEquals(true, opts.getEventBusOptions().isClustered());
     assertEquals("mars", opts.getEventBusOptions().getClusterPublicHost());
     assertEquals("somegroup", opts.getHAGroup());
     assertEquals(TimeUnit.SECONDS, opts.getMaxEventLoopExecuteTimeUnit());

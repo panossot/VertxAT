@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.8.5"})
 public class HATest extends VertxTestBase {
 
   protected ClusterManager getClusterManager() {
@@ -387,7 +387,7 @@ public class HATest extends VertxTestBase {
       .setHAEnabled(ha)
       .setClusterManager(getClusterManager());
     options.getEventBusOptions()
-      .setHost("localhost");
+      .setClustered(true).setHost("localhost");
     if (ha) {
       options.setQuorumSize(quorumSize);
       if (haGroup != null) {

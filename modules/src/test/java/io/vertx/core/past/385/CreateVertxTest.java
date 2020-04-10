@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -20,7 +20,7 @@ import org.junit.Test;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.5*3.8.5"})
 public class CreateVertxTest extends VertxTestBase {
 
   @Test
@@ -38,8 +38,21 @@ public class CreateVertxTest extends VertxTestBase {
   }
 
   @Test
+  public void testFailCreateClusteredVertxSynchronously() {
+    VertxOptions options = new VertxOptions();
+    options.getEventBusOptions().setClustered(true);
+    try {
+      Vertx.vertx(options);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+  @Test
   public void testCreateClusteredVertxAsync() {
     VertxOptions options = new VertxOptions();
+    options.getEventBusOptions().setClustered(true);
     clusteredVertx(options, ar -> {
       assertTrue(ar.succeeded());
       assertNotNull(ar.result());
@@ -52,6 +65,27 @@ public class CreateVertxTest extends VertxTestBase {
     });
     await();
   }
+
+  /*
+  If the user doesn't explicitly set clustered to true, it should still create a clustered Vert.x
+   */
+  @Test
+  public void testCreateClusteredVertxAsyncDontSetClustered() {
+    VertxOptions options = new VertxOptions();
+    clusteredVertx(options, ar -> {
+      assertTrue(ar.succeeded());
+      assertNotNull(ar.result());
+      assertTrue(options.getEventBusOptions().isClustered());
+      assertTrue(ar.result().isClustered());
+      Vertx v = ar.result();
+      v.close(ar2 -> {
+        assertTrue(ar2.succeeded());
+        testComplete();
+      });
+    });
+    await();
+  }
+
 
   @Test
   public void testCreateClusteredVertxAsyncDetectJoinFailure() {
