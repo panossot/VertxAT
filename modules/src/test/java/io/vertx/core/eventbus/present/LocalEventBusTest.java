@@ -19,7 +19,6 @@ import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
@@ -1215,7 +1214,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testSender() {
     String str = TestUtils.randomUnicodeString(100);
-    WriteStream<String> sender = eb.sender(ADDRESS1);
+    MessageProducer<String> sender = eb.sender(ADDRESS1);
     eb.consumer(ADDRESS1).handler(message -> {
       if (message.body().equals(str)) {
         testComplete();
@@ -1228,7 +1227,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testSenderWithOptions() {
     String str = TestUtils.randomUnicodeString(100);
-    WriteStream<String> sender = eb.sender(ADDRESS1, new DeliveryOptions().addHeader("foo", "foo_value"));
+    MessageProducer<String> sender = eb.sender(ADDRESS1, new DeliveryOptions().addHeader("foo", "foo_value"));
     eb.consumer(ADDRESS1).handler(message -> {
       if (message.body().equals(str) && "foo_value".equals(message.headers().get("foo"))) {
         testComplete();
@@ -1292,20 +1291,6 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testClosePublisher2() {
     eb.publisher(ADDRESS1).close(null);
-  }
-
-  @Test
-  public void testPump() {
-    String str = TestUtils.randomUnicodeString(100);
-    ReadStream<String> consumer = eb.<String>consumer(ADDRESS1).bodyStream();
-    consumer.handler(message -> {
-      if (message.equals(str)) {
-        testComplete();
-      }
-    });
-    MessageProducer<String> producer = eb.sender(ADDRESS2);
-    Pump.pump(consumer, producer);
-    producer.write(str);
   }
 
   @Test
