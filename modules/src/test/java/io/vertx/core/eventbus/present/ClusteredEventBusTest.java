@@ -11,6 +11,7 @@
 
 package io.vertx.core.eventbus;
 
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxInternal;
@@ -36,13 +37,35 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
 
   @Test
-  public void testLocalHandlerNotReceive() throws Exception {
+  public void testLocalHandlerNotVisibleRemotely() throws Exception {
     startNodes(2);
     vertices[1].eventBus().localConsumer(ADDRESS1).handler(msg -> {
       fail("Should not receive message");
     });
     vertices[0].eventBus().send(ADDRESS1, "foo");
+    vertices[0].eventBus().publish(ADDRESS1, "foo");
     vertices[0].setTimer(1000, id -> testComplete());
+    await();
+  }
+
+  @Test
+  public void testLocalHandlerClusteredSend() throws Exception {
+    startNodes(2);
+    waitFor(2);
+    vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> complete());
+    vertices[0].eventBus().localConsumer(ADDRESS1).handler(msg -> complete());
+    vertices[0].eventBus().send(ADDRESS1, "foo");
+    vertices[0].eventBus().send(ADDRESS1, "foo");
+    await();
+  }
+
+  @Test
+  public void testLocalHandlerClusteredPublish() throws Exception {
+    startNodes(2);
+    waitFor(2);
+    vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> complete());
+    vertices[0].eventBus().localConsumer(ADDRESS1).handler(msg -> complete());
+    vertices[0].eventBus().publish(ADDRESS1, "foo");
     await();
   }
 
@@ -216,8 +239,10 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   @Test
   public void testSubsRemovedForKilledNode() throws Exception {
     testSubsRemoved(latch -> {
-      VertxInternal vi = (VertxInternal)vertices[1];
-      vi.getClusterManager().leave(onSuccess(v -> {
+      VertxInternal vi = (VertxInternal) vertices[1];
+      Promise<Void> promise = vi.getOrCreateContext().promise();
+      vi.getClusterManager().leave(promise);
+      promise.future().onComplete(onSuccess(v -> {
         latch.countDown();
       }));
     });
@@ -342,10 +367,12 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     startNodes(1);
     MessageConsumer<Object> consumer = vertices[0].eventBus().consumer(ADDRESS1);
     AtomicInteger completionCount = new AtomicInteger();
-    consumer.completionHandler(onSuccess(v -> {
+    consumer.completionHandler(v -> {
+      // Do not assert success because the handler could be unregistered locally
+      // before the registration was propagated to the cluster manager
       int val = completionCount.getAndIncrement();
       assertEquals(0, val);
-    }));
+    });
     consumer.handler(msg -> {});
     consumer.unregister(onSuccess(v -> {
       int val = completionCount.getAndIncrement();

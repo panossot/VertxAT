@@ -12,6 +12,7 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.*;
+import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.MessageConsumerImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
@@ -41,14 +42,14 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class LocalEventBusTest extends EventBusTestBase {
 
-  private EventBus eb;
+  private EventBusInternal eb;
   private boolean running;
 
   public void setUp() throws Exception {
     super.setUp();
     vertx.close();
     vertx = Vertx.vertx();
-    eb = vertx.eventBus();
+    eb = (EventBusInternal) vertx.eventBus();
     running = true;
   }
 
@@ -656,7 +657,9 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testCloseEventBus() {
-    eb.close(ar -> {
+    Promise<Void> promise = Promise.promise();
+    eb.close(promise);
+    promise.future().onComplete(ar -> {
       assertTrue(ar.succeeded());
       testComplete();
     });

@@ -23,7 +23,7 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.8.5"})
 class ChoosableSet<T> implements ChoosableIterable<T> {
 
   private final Set<T> ids;
