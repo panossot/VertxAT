@@ -17,6 +17,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.TrustAllTrustManager;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Rule;
@@ -35,7 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /**
@@ -43,7 +44,7 @@ import java.util.function.Function;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+//@apAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public abstract class HttpTLSTest extends HttpTestBase {
 
   @Rule
@@ -924,6 +925,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     boolean serverOpenSSL;
     boolean serverUsesAlpn;
     boolean serverSSL = true;
+    boolean serverUsesProxyProtocol = false;
     ProxyType proxyType;
     boolean useProxyAuth;
     String[] clientEnabledCipherSuites = new String[0];
@@ -931,6 +933,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     String[] clientEnabledSecureTransportProtocol   = new String[0];
     String[] serverEnabledSecureTransportProtocol   = new String[0];
     private String connectHostname;
+    private Integer connectPort;
     private boolean followRedirects;
     private boolean serverSNI;
     private boolean clientForceSNI;
@@ -941,7 +944,14 @@ public abstract class HttpTLSTest extends HttpTestBase {
       } else {
         httpHost = DEFAULT_HTTP_HOST;
       }
-      return client.request(HttpMethod.POST, 4043, httpHost, DEFAULT_TEST_URI);
+
+      int httpPort;
+      if(connectPort != null) {
+        httpPort = connectPort;
+      } else {
+        httpPort = 4043;
+      }
+      return client.request(HttpMethod.POST, httpPort, httpHost, DEFAULT_TEST_URI);
     };
     X509Certificate clientPeerCert;
     String indicatedServerName;
@@ -1049,8 +1059,18 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return this;
     }
 
+    TLSTest serverUsesProxyProtocol() {
+      serverUsesProxyProtocol = true;
+      return this;
+    }
+
     TLSTest connectHostname(String connectHostname) {
       this.connectHostname = connectHostname;
+      return this;
+    }
+
+    TLSTest connectPort(int connectPort) {
+      this.connectPort = connectPort;
       return this;
     }
 
@@ -1109,6 +1129,8 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       if (clientOpenSSL) {
         options.setOpenSslEngineOptions(new OpenSSLEngineOptions());
+      } else {
+        options.setJdkSslEngineOptions(new JdkSSLEngineOptions());
       }
       if (clientUsesAlpn) {
         options.setUseAlpn(true);
@@ -1153,6 +1175,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       serverOptions.setUseAlpn(serverUsesAlpn);
       serverOptions.setSsl(serverSSL);
       serverOptions.setSni(serverSNI);
+      serverOptions.setUseProxyProtocol(serverUsesProxyProtocol);
       for (String suite: serverEnabledCipherSuites) {
         serverOptions.addEnabledCipherSuite(suite);
       }
@@ -1382,29 +1405,27 @@ public abstract class HttpTLSTest extends HttpTestBase {
     HttpServer server = vertx.createHttpServer(serverOptions);
     server.requestHandler(req -> {
     });
-    try {
-      server.listen();
-      fail("Was expecting a failure");
-    } catch (VertxException e) {
-      Throwable cause = e.getCause();
-      if(expectedSuffix == null) {
-        boolean ok = expectedPossiblePrefixes.isEmpty();
-        for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
-          ok |= expectedPossiblePrefix.equals(cause.getMessage());
-        }
-        if (!ok) {
-          fail("Was expecting <" + cause.getMessage() + ">  to be equals to one of " + expectedPossiblePrefixes);
-        }
-      } else {
-        boolean ok = expectedPossiblePrefixes.isEmpty();
-        for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
-          ok |= cause.getMessage().startsWith(expectedPossiblePrefix);
-        }
-        if (!ok) {
-          fail("Was expecting e.getCause().getMessage() to be prefixed by one of " + expectedPossiblePrefixes);
-        }
-        assertTrue(cause.getMessage().endsWith(expectedSuffix));
+    AtomicReference<Throwable> failure = new AtomicReference<>();
+    server.listen(onFailure(failure::set));
+    assertWaitUntil(() -> failure.get() != null);
+    Throwable cause = failure.get().getCause();
+    if(expectedSuffix == null) {
+      boolean ok = expectedPossiblePrefixes.isEmpty();
+      for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
+        ok |= expectedPossiblePrefix.equals(cause.getMessage());
       }
+      if (!ok) {
+        fail("Was expecting <" + cause.getMessage() + ">  to be equals to one of " + expectedPossiblePrefixes);
+      }
+    } else {
+      boolean ok = expectedPossiblePrefixes.isEmpty();
+      for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
+        ok |= cause.getMessage().startsWith(expectedPossiblePrefix);
+      }
+      if (!ok) {
+        fail("Was expecting e.getCause().getMessage() to be prefixed by one of " + expectedPossiblePrefixes);
+      }
+      assertTrue(cause.getMessage().endsWith(expectedSuffix));
     }
   }
 
@@ -1526,5 +1547,23 @@ public abstract class HttpTLSTest extends HttpTestBase {
         .connectHostname("doesnt-resolve.host-name").clientTrustAll().clientVerifyHost(false).pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
     assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:4043", proxy.getLastUri());
+  }
+
+  @Test
+  public void testHAProxy() throws Exception {
+    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
+    SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
+    Buffer header = HAProxy.createVersion1TCP4ProtocolHeader(remote, local);
+    HAProxy proxy = new HAProxy("localhost", 4043, header);
+    proxy.start(vertx);
+    try {
+      testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE)
+        .serverUsesProxyProtocol()
+        .connectHostname(proxy.getHost())
+        .connectPort(proxy.getPort())
+        .pass();
+    } finally {
+      proxy.stop();
+    }
   }
 }
