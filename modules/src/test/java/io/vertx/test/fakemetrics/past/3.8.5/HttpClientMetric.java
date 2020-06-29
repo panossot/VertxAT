@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -20,17 +20,19 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.8.5"})
 public class HttpClientMetric {
 
   public final EndpointMetric endpoint;
   public final HttpClientRequest request;
+  public final SocketMetric socket;
   public final AtomicInteger requestEnded = new AtomicInteger();
   public final AtomicInteger responseBegin = new AtomicInteger();
   public final AtomicBoolean failed = new AtomicBoolean();
 
-  public HttpClientMetric(EndpointMetric endpoint, HttpClientRequest request) {
+  public HttpClientMetric(EndpointMetric endpoint, HttpClientRequest request, SocketMetric socket) {
     this.endpoint = endpoint;
     this.request = request;
+    this.socket = socket;
   }
 }

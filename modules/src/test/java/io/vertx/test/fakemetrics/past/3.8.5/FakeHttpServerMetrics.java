@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -27,7 +27,7 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.8.5"})
 public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServerMetrics<HttpServerMetric, WebSocketMetric, SocketMetric> {
 
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
@@ -81,7 +81,7 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
     if (!requests.remove(requestMetric)) {
       throw new IllegalStateException();
     }
-    WebSocketMetric metric = new WebSocketMetric(serverWebSocket);
+    WebSocketMetric metric = new WebSocketMetric(socketMetric, serverWebSocket);
     if (webSockets.put(serverWebSocket, metric) != null) {
       throw new AssertionError();
     }
