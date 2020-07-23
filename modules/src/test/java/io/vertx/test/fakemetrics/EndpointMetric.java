@@ -11,9 +11,9 @@
 
 package io.vertx.test.fakemetrics;
 
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.observability.HttpRequest;
+import io.vertx.core.spi.observability.HttpResponse;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -26,12 +26,12 @@ import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
-public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, HttpClientRequest, HttpClientResponse> {
+public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, HttpRequest, HttpResponse> {
 
   public final AtomicInteger queueSize = new AtomicInteger();
   public final AtomicInteger connectionCount = new AtomicInteger();
   public final AtomicInteger requestCount = new AtomicInteger();
-  public final ConcurrentMap<HttpClientRequest, HttpClientMetric> requests = new ConcurrentHashMap<>();
+  public final ConcurrentMap<HttpRequest, HttpClientMetric> requests = new ConcurrentHashMap<>();
 
   public EndpointMetric() {
   }
@@ -48,8 +48,9 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
   }
 
   @Override
-  public HttpClientMetric requestBegin(String uri, HttpClientRequest request) {
+  public HttpClientMetric requestBegin(String uri, HttpRequest request) {
     requestCount.incrementAndGet();
+
     HttpClientMetric metric = new HttpClientMetric(this, request);
     requests.put(request, metric);
     return metric;
@@ -61,7 +62,7 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
   }
 
   @Override
-  public void responseBegin(HttpClientMetric requestMetric, HttpClientResponse response) {
+  public void responseBegin(HttpClientMetric requestMetric, HttpResponse response) {
     assertNotNull(response);
     requestMetric.responseBegin.incrementAndGet();
   }
@@ -74,9 +75,8 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
   }
 
   @Override
-  public void responseEnd(HttpClientMetric requestMetric, HttpClientResponse response) {
+  public void responseEnd(HttpClientMetric requestMetric) {
     requestCount.decrementAndGet();
     requests.remove(requestMetric.request);
   }
-
 }

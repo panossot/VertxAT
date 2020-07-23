@@ -58,6 +58,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
@@ -98,7 +99,7 @@ import static io.vertx.test.core.TestUtils.assertIllegalStateException;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+#@apAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
 public class Http2ServerTest extends Http2TestBase {
 
   private static Http2Headers headers(String method, String scheme, String path) {
@@ -2324,6 +2325,7 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  @DetectFileDescriptorLeaks
   public void testNetSocketSendFile() throws Exception {
     Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1000 * 1000));
     File tmp = createTempFile(expected);
@@ -2338,6 +2340,7 @@ public class Http2ServerTest extends Http2TestBase {
     int to = 700 * 1000;
     testNetSocketSendFile(expected.slice(from, to), tmp.getAbsolutePath(), from, to - from);
   }
+
 
   private void testNetSocketSendFile(Buffer expected, String path, long offset, long length) throws Exception {
     server.requestHandler(req -> {
@@ -2594,7 +2597,7 @@ public class Http2ServerTest extends Http2TestBase {
       assertNotNull(conn);
       serverConnectionCount.incrementAndGet();
     });
-    startServer();
+    startServer(testAddress);
     AtomicInteger clientConnectionCount = new AtomicInteger();
     client = vertx.createHttpClient(clientOptions.
         setUseAlpn(false).
@@ -2617,22 +2620,24 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   private void doRequest(HttpMethod method, Buffer expected, Handler<HttpConnection> connHandler, Promise<HttpClientResponse> fut) {
-    HttpClientRequest req = client.request(method, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
-      .onComplete(onSuccess(resp -> {
-        assertEquals(HttpVersion.HTTP_2, resp.version());
-        // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
-        // assertEquals(1, serverConnectionCount.get());
-        // assertEquals(1, clientConnectionCount.get());
-        fut.tryComplete(resp);
-      }));
     if (connHandler != null) {
       client.connectionHandler(connHandler);
     }
-    if (expected.length() > 0) {
-      req.end(expected);
-    } else {
-      req.end();
-    }
+    client.request(new RequestOptions(requestOptions).setMethod(method)).onComplete(onSuccess(req -> {
+      req
+        .onComplete(onSuccess(resp -> {
+          assertEquals(HttpVersion.HTTP_2, resp.version());
+          // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
+          // assertEquals(1, serverConnectionCount.get());
+          // assertEquals(1, clientConnectionCount.get());
+          fut.tryComplete(resp);
+        }));
+      if (expected.length() > 0) {
+        req.end(expected);
+      } else {
+        req.end();
+      }
+    }));
   }
 
   @Test
@@ -2651,21 +2656,22 @@ public class Http2ServerTest extends Http2TestBase {
       });
       req.response().end();
     });
-    startServer();
+    startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false));
-    HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
-    req.onComplete(onSuccess(resp -> {
-      assertEquals(HttpVersion.HTTP_2, resp.version());
-      complete();
-    })).exceptionHandler(this::fail).pushHandler(pushedReq -> {
-      pushedReq.onComplete(onSuccess(pushResp -> {
-        pushResp.bodyHandler(buff -> {
-          assertEquals("the-pushed-response", buff.toString());
-          complete();
-        });
-      }));
-    }).end();
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.onComplete(onSuccess(resp -> {
+        assertEquals(HttpVersion.HTTP_2, resp.version());
+        complete();
+      })).exceptionHandler(this::fail).pushHandler(pushedReq -> {
+        pushedReq.onComplete(onSuccess(pushResp -> {
+          pushResp.bodyHandler(buff -> {
+            assertEquals("the-pushed-response", buff.toString());
+            complete();
+          });
+        }));
+      }).end();
+    }));
     await();
   }
 
@@ -2762,19 +2768,21 @@ public class Http2ServerTest extends Http2TestBase {
         }
       });
     });
-    startServer();
+    startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(clientOptions.setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false).setSsl(false));
-    HttpClientRequest request = client.request(HttpMethod.PUT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
-      .onComplete(resp -> {
-      }).putHeader("Upgrade", "h2c")
-      .putHeader("Connection", "Upgrade,HTTP2-Settings")
-      .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings()))
-      .setChunked(true);
-    request.write("some-data");
-    closeRequest.thenAccept(v -> {
-      request.connection().close();
-    });
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT)).onComplete(onSuccess(req -> {
+      req
+        .onComplete(resp -> {
+        }).putHeader("Upgrade", "h2c")
+        .putHeader("Connection", "Upgrade,HTTP2-Settings")
+        .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings()))
+        .setChunked(true);
+      req.write("some-data");
+      closeRequest.thenAccept(v -> {
+        req.connection().close();
+      });
+    }));
     await();
   }
 
