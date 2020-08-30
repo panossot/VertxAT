@@ -19,8 +19,8 @@ import java.util.concurrent.TimeUnit;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
@@ -135,22 +135,28 @@ public class HttpProxy extends TestProxyBase {
         HttpClient client = vertx.createHttpClient();
         RequestOptions opts = new RequestOptions();
         opts.setAbsoluteURI(uri);
-        for (String name : request.headers().names()) {
-          if (!name.equals("Proxy-Authorization")) {
-            opts.addHeader(name, request.headers().get(name));
+        client.request(opts).compose(req -> {
+          for (String name : request.headers().names()) {
+            if (!name.equals("Proxy-Authorization")) {
+              req.putHeader(name, request.headers().get(name));
+            }
           }
-        }
-        client.get(opts, ar -> {
-          if (ar.succeeded()) {
-            HttpClientResponse resp = ar.result();
+          return req.send();
+        }).onComplete(ar1 -> {
+          if (ar1.succeeded()) {
+            HttpClientResponse resp = ar1.result();
             for (String name : resp.headers().names()) {
               request.response().putHeader(name, resp.headers().getAll(name));
             }
-            resp.bodyHandler(body -> {
-              request.response().end(body);
+            resp.body(ar2 -> {
+              if (ar2.succeeded()) {
+                request.response().end(ar2.result());
+              } else {
+                request.response().setStatusCode(500).end(ar2.cause().toString() + " on client request");
+              }
             });
           } else {
-            Throwable e = ar.cause();
+            Throwable e = ar1.cause();
             log.debug("exception", e);
             int status;
             if (e instanceof UnknownHostException) {

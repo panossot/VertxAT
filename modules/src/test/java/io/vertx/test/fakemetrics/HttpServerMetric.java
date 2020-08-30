@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -28,6 +28,7 @@ public class HttpServerMetric {
   public final SocketMetric socket;
   public final AtomicBoolean failed = new AtomicBoolean();
   public final AtomicReference<HttpServerResponse> response = new AtomicReference<>();
+  public final AtomicReference<String> route = new AtomicReference<>();
 
   public HttpServerMetric(HttpServerRequest request, SocketMetric socket) {
     this.request = request;

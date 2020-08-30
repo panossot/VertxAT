@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -27,9 +27,9 @@ import java.util.concurrent.CountDownLatch;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
- import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
+import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0*4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.6.0*3.8.5"})
 public class HttpTestBase extends VertxTestBase {
 
   public static final String DEFAULT_HTTP_HOST = "localhost";
@@ -43,7 +43,6 @@ public class HttpTestBase extends VertxTestBase {
   protected HttpClient client;
   protected TestProxyBase proxy;
   protected SocketAddress testAddress;
-  protected RequestOptions requestOptions;
 
   protected HttpServerOptions createBaseServerOptions() {
     return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
@@ -55,14 +54,9 @@ public class HttpTestBase extends VertxTestBase {
 
   public void setUp() throws Exception {
     super.setUp();
-    HttpServerOptions baseServerOptions = createBaseServerOptions();
-    server = vertx.createHttpServer(baseServerOptions);
+    server = vertx.createHttpServer(createBaseServerOptions());
     client = vertx.createHttpClient(createBaseClientOptions());
-    testAddress = SocketAddress.inetSocketAddress(baseServerOptions.getPort(), baseServerOptions.getHost());
-    requestOptions = new RequestOptions()
-      .setHost(baseServerOptions.getHost())
-      .setPort(baseServerOptions.getPort())
-      .setURI(DEFAULT_TEST_URI);
+    testAddress = SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
   protected void tearDown() throws Exception {
