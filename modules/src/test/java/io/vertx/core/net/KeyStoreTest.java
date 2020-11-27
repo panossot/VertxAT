@@ -38,7 +38,7 @@ import static org.junit.Assert.assertNotEquals;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.7.0*3.9.0"})
 public class KeyStoreTest extends VertxTestBase {
 
   @Test

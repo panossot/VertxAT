@@ -37,7 +37,7 @@ import io.vertx.core.net.PemKeyCertOptions;
  */
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.5"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#3.8.5*3.9.0"})
 public class KeyStoreHelperTest extends VertxTestBase {
 
   /**
