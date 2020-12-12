@@ -9,7 +9,7 @@ Current supported versions : 3.8.3, 3.8.2, 3.8.1, 3.8.0, 3.7.1 , 3.7.0, 3.6.3, 3
 
 Steps to execute :
 
-1. Build the VertX version you want to test
+1. Build the VertX version you want to test (after all the needed dependencies are available)
 2. export VERTX_VERSION='version of VertX branch'
 3. export JBOSS_VERSION='version of VertX branch ending with Final', for example if VERTX_VERSION=4.0.0-SNAPSHOT then JBOSS_VERSION=4.0.0.Final-SNAPSHOT
 4. mvn clean install -Dmaster
