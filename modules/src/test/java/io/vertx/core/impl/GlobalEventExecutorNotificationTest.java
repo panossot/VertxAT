@@ -25,7 +25,7 @@ import org.junit.Test;
 import java.util.concurrent.CountDownLatch;
 import org.jboss.eap.additional.testsuite.annotations.EapAdditionalTestsuite;
 
-@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0"})
+@EapAdditionalTestsuite({"modules/testcases/jdkAll/master/vertx/src/main/java#4.0.0*4.0.1"})
 public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
 
   private Vertx vertx;
